@@ -72,7 +72,7 @@ export const buildQueryFactory =
           );
           resource = overrideResourceTypeName(
             resource,
-            functionResource.resource_name
+            functionResource.function_name
           );
         }
       }

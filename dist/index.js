@@ -21536,7 +21536,7 @@ PERFORMANCE OF THIS SOFTWARE.
                   GET_MANY: { ...e.GET_MANY, name: t },
                   GET_MANY_REFERENCE: { ...e.GET_MANY_REFERENCE, name: t },
                   type: { ...e.type, name: t },
-                }))(c, e.resource_name)));
+                }))(c, e.function_name)));
           }
           if (!c)
             throw a.length
