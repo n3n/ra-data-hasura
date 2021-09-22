@@ -70,7 +70,10 @@ export const buildQueryFactory =
           resource = introspectionResults.resources.find(
             (r) => r.type.name === functionResource.resource_name
           );
-          resource = overrideResourceTypeName(resource);
+          resource = overrideResourceTypeName(
+            resource,
+            functionResource.resource_name
+          );
         }
       }
 
