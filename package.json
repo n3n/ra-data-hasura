@@ -28,6 +28,7 @@
   "license": "MIT",
   "scripts": {
     "build": "webpack --mode production",
+    "dev": "webpack --watch",
     "prettier": "prettier --config ./.prettierrc --write '**/*.{js,jsx,md}'"
   },
   "dependencies": {
