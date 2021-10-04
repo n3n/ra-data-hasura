@@ -1,4 +1,5 @@
 const path = require('path');
+const EsmWebpackPlugin = require('@purtuga/esm-webpack-plugin');
 
 module.exports = {
   mode: 'production',
@@ -6,8 +7,11 @@ module.exports = {
   output: {
     path: path.resolve('dist'),
     filename: 'index.js',
-    libraryTarget: 'commonjs2',
+    // libraryTarget: 'commonjs2',
+    library: 'LIB',
+    libraryTarget: 'var',
   },
+  plugins: [new EsmWebpackPlugin()],
   module: {
     rules: [
       {

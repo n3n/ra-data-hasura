@@ -1,4 +1,4 @@
-module.exports = (function (e) {
+var LIB = (function (e) {
   var t = {};
   function n(r) {
     if (t[r]) return t[r].exports;
@@ -277,7 +277,7 @@ PERFORMANCE OF THIS SOFTWARE.
           return I;
         }),
         n.d(t, 'd', function () {
-          return G;
+          return K;
         }),
         n.d(t, 'e', function () {
           return q;
@@ -286,7 +286,7 @@ PERFORMANCE OF THIS SOFTWARE.
           return Y;
         }),
         n.d(t, 'g', function () {
-          return L;
+          return k;
         }),
         n.d(t, 'h', function () {
           return x;
@@ -301,7 +301,7 @@ PERFORMANCE OF THIS SOFTWARE.
           return N;
         }),
         n.d(t, 'l', function () {
-          return k;
+          return L;
         }),
         n.d(t, 'm', function () {
           return j;
@@ -355,7 +355,7 @@ PERFORMANCE OF THIS SOFTWARE.
           return U;
         }),
         n.d(t, 'D', function () {
-          return K;
+          return G;
         }),
         n.d(t, 'E', function () {
           return d;
@@ -688,7 +688,7 @@ PERFORMANCE OF THIS SOFTWARE.
         var t = j(e);
         return Object(i.b)(t && 'query' === t.operation, 6), t;
       }
-      function k(e) {
+      function L(e) {
         var t;
         S(e);
         for (var n = 0, r = e.definitions; n < r.length; n++) {
@@ -703,7 +703,7 @@ PERFORMANCE OF THIS SOFTWARE.
         if (t) return t;
         throw new i.a(10);
       }
-      function L(e) {
+      function k(e) {
         void 0 === e && (e = []);
         var t = {};
         return (
@@ -753,7 +753,7 @@ PERFORMANCE OF THIS SOFTWARE.
               var t = e.definitions[0];
               return Object(i.b)('FragmentDefinition' === t.kind, 9), t;
             })(e),
-          L(D(e))
+          k(D(e))
         )
           ? null
           : e;
@@ -956,11 +956,11 @@ PERFORMANCE OF THIS SOFTWARE.
           );
         },
       };
-      function K(e) {
+      function G(e) {
         return Q([C], S(e));
       }
-      function G(e) {
-        return 'query' === k(e).operation
+      function K(e) {
+        return 'query' === L(e).operation
           ? e
           : Object(r.visit)(e, {
               OperationDefinition: {
@@ -1496,9 +1496,9 @@ PERFORMANCE OF THIS SOFTWARE.
           );
         return e;
       }),
-      (t.isInputType = k),
+      (t.isInputType = L),
       (t.assertInputType = function (e) {
-        if (!k(e))
+        if (!L(e))
           throw new Error(
             'Expected '.concat(
               (0, i.default)(e),
@@ -1507,9 +1507,9 @@ PERFORMANCE OF THIS SOFTWARE.
           );
         return e;
       }),
-      (t.isOutputType = L),
+      (t.isOutputType = k),
       (t.assertOutputType = function (e) {
-        if (!L(e))
+        if (!k(e))
           throw new Error(
             'Expected '.concat(
               (0, i.default)(e),
@@ -1566,9 +1566,9 @@ PERFORMANCE OF THIS SOFTWARE.
       (t.getNullableType = function (e) {
         if (e) return A(e) ? e.ofType : e;
       }),
-      (t.isNamedType = K),
+      (t.isNamedType = G),
       (t.assertNamedType = function (e) {
-        if (!K(e))
+        if (!G(e))
           throw new Error(
             'Expected '.concat(
               (0, i.default)(e),
@@ -1692,11 +1692,11 @@ PERFORMANCE OF THIS SOFTWARE.
     function A(e) {
       return (0, l.default)(e, M);
     }
-    function k(e) {
-      return _(e) || j(e) || w(e) || (Q(e) && k(e.ofType));
-    }
     function L(e) {
-      return _(e) || N(e) || I(e) || S(e) || j(e) || (Q(e) && L(e.ofType));
+      return _(e) || j(e) || w(e) || (Q(e) && L(e.ofType));
+    }
+    function k(e) {
+      return _(e) || N(e) || I(e) || S(e) || j(e) || (Q(e) && k(e.ofType));
     }
     function x(e) {
       return _(e) || j(e);
@@ -1731,10 +1731,10 @@ PERFORMANCE OF THIS SOFTWARE.
         );
       return e;
     }
-    function K(e) {
+    function G(e) {
       return _(e) || N(e) || I(e) || S(e) || j(e) || w(e);
     }
-    function G(e) {
+    function K(e) {
       return 'function' == typeof e ? e() : e;
     }
     function U(e) {
@@ -1861,7 +1861,7 @@ PERFORMANCE OF THIS SOFTWARE.
       );
     })();
     function Y(e) {
-      var t = G(e.interfaces) || [];
+      var t = K(e.interfaces) || [];
       return (
         Array.isArray(t) ||
           (0, s.default)(
@@ -1875,7 +1875,7 @@ PERFORMANCE OF THIS SOFTWARE.
       );
     }
     function $(e) {
-      var t = G(e.fields) || {};
+      var t = K(e.fields) || {};
       return (
         J(t) ||
           (0, s.default)(
@@ -2078,7 +2078,7 @@ PERFORMANCE OF THIS SOFTWARE.
       );
     })();
     function Z(e) {
-      var t = G(e.types) || [];
+      var t = K(e.types) || [];
       return (
         Array.isArray(t) ||
           (0, s.default)(
@@ -2260,7 +2260,7 @@ PERFORMANCE OF THIS SOFTWARE.
       );
     })();
     function ne(e) {
-      var t = G(e.fields) || {};
+      var t = K(e.fields) || {};
       return (
         J(t) ||
           (0, s.default)(
@@ -12709,11 +12709,11 @@ PERFORMANCE OF THIS SOFTWARE.
                   I(e) ? w(t, e) : D(t, e),
                   t
                 );
-            })(this) || !k(this))
+            })(this) || !L(this))
           )
             return I(this)
               ? (function (e) {
-                  var t = L(e);
+                  var t = k(e);
                   b.withValue(e, N, [e]),
                     (function (e) {
                       if ('function' == typeof e.subscribe)
@@ -12729,7 +12729,7 @@ PERFORMANCE OF THIS SOFTWARE.
                         if (((e.dirty = !1), I(e))) return;
                         j(e);
                       })(e);
-                  return t.forEach(k), O(e.value);
+                  return t.forEach(L), O(e.value);
                 })(this)
               : O(this.value);
         }),
@@ -12739,7 +12739,7 @@ PERFORMANCE OF THIS SOFTWARE.
         }),
         (e.prototype.dispose = function () {
           var e = this;
-          L(this).forEach(k),
+          k(this).forEach(L),
             P(this),
             this.parents.forEach(function (t) {
               t.setDirty(), x(t, e);
@@ -12799,14 +12799,14 @@ PERFORMANCE OF THIS SOFTWARE.
         0 === n.size &&
           (g.length < 100 && g.push(n), (e.dirtyChildren = null)));
     }
-    function k(e) {
+    function L(e) {
       return (
         0 === e.parents.size &&
         'function' == typeof e.reportOrphan &&
         !0 === e.reportOrphan()
       );
     }
-    function L(e) {
+    function k(e) {
       var t = T;
       return (
         e.childValues.size > 0 &&
@@ -12915,10 +12915,10 @@ PERFORMANCE OF THIS SOFTWARE.
       );
     }
     var C = n(3),
-      K = !1;
-    function G() {
-      var e = !K;
-      return Object(i.y)() || (K = !0), e;
+      G = !1;
+    function K() {
+      var e = !G;
+      return Object(i.y)() || (G = !0), e;
     }
     var U = (function () {
         function e() {}
@@ -12935,7 +12935,7 @@ PERFORMANCE OF THIS SOFTWARE.
             if (!r) return i;
             var o = r.__typename,
               a = void 0 === o ? i && 'Query' : o;
-            return (a && a === t) || (G(), 'heuristic');
+            return (a && a === t) || (K(), 'heuristic');
           }),
           e
         );
@@ -15369,28 +15369,28 @@ PERFORMANCE OF THIS SOFTWARE.
           !1),
       (e.exports = function e(t, n, S, j, w, D) {
         var A,
-          k = 1 & n,
-          L = 2 & n,
+          L = 1 & n,
+          k = 2 & n,
           x = 4 & n;
         if ((S && (A = w ? S(t, j, w, D) : S(t)), void 0 !== A)) return A;
         if (!E(t)) return t;
         var P = b(t);
         if (P) {
-          if (((A = v(t)), !k)) return c(t, A);
+          if (((A = v(t)), !L)) return c(t, A);
         } else {
           var F = y(t),
             R = '[object Function]' == F || '[object GeneratorFunction]' == F;
-          if (T(t)) return s(t, k);
+          if (T(t)) return s(t, L);
           if (
             '[object Object]' == F ||
             '[object Arguments]' == F ||
             (R && !w)
           ) {
-            if (((A = L || R ? {} : m(t)), !k))
-              return L ? f(t, u(A, t)) : l(t, a(A, t));
+            if (((A = k || R ? {} : m(t)), !L))
+              return k ? f(t, u(A, t)) : l(t, a(A, t));
           } else {
             if (!I[F]) return w ? t : {};
-            A = h(t, F, k);
+            A = h(t, F, L);
           }
         }
         D || (D = new r());
@@ -15405,7 +15405,7 @@ PERFORMANCE OF THIS SOFTWARE.
               t.forEach(function (r, i) {
                 A.set(i, e(r, n, S, i, t, D));
               });
-        var Q = P ? void 0 : (x ? (L ? d : p) : L ? N : _)(t);
+        var Q = P ? void 0 : (x ? (k ? d : p) : k ? N : _)(t);
         return (
           i(Q || t, function (r, i) {
             Q && (r = t[(i = r)]), o(A, i, e(r, n, S, i, t, D));
@@ -15905,27 +15905,27 @@ PERFORMANCE OF THIS SOFTWARE.
         var u = a[o];
         switch (u.kind) {
           case m.Kind.FIELD:
-            if (!k(e, u)) continue;
+            if (!L(e, u)) continue;
             var s = (f = u).alias ? f.alias.value : f.name.value;
             r[s] || (r[s] = []), r[s].push(u);
             break;
           case m.Kind.INLINE_FRAGMENT:
-            if (!k(e, u) || !L(e, u, t)) continue;
+            if (!L(e, u) || !k(e, u, t)) continue;
             A(e, t, u.selectionSet, r, i);
             break;
           case m.Kind.FRAGMENT_SPREAD:
             var c = u.name.value;
-            if (i[c] || !k(e, u)) continue;
+            if (i[c] || !L(e, u)) continue;
             i[c] = !0;
             var l = e.fragments[c];
-            if (!l || !L(e, l, t)) continue;
+            if (!l || !k(e, l, t)) continue;
             A(e, t, l.selectionSet, r, i);
         }
       }
       var f;
       return r;
     }
-    function k(e, t) {
+    function L(e, t) {
       var n = (0, N.getDirectiveValues)(
         g.GraphQLSkipDirective,
         t,
@@ -15939,7 +15939,7 @@ PERFORMANCE OF THIS SOFTWARE.
       );
       return !r || !1 !== r.if;
     }
-    function L(e, t, n) {
+    function k(e, t, n) {
       var r = t.typeCondition;
       if (!r) return !0;
       var i = (0, O.typeFromAST)(e.schema, r);
@@ -16066,12 +16066,12 @@ PERFORMANCE OF THIS SOFTWARE.
               s = a(o, u, r, t);
             if ((0, l.default)(s))
               return s.then(function (a) {
-                return K(e, C(a, e, t, n, r, o), n, r, i, o);
+                return G(e, C(a, e, t, n, r, o), n, r, i, o);
               });
-            return K(e, C(s, e, t, n, r, o), n, r, i, o);
+            return G(e, C(s, e, t, n, r, o), n, r, i, o);
           })(e, t, n, o, u, f)
         : (0, E.isObjectType)(t)
-        ? K(e, t, n, o, u, f)
+        ? G(e, t, n, o, u, f)
         : void (0, a.default)(
             !1,
             'Cannot complete value of unexpected output type: ' +
@@ -16107,19 +16107,19 @@ PERFORMANCE OF THIS SOFTWARE.
         );
       return u;
     }
-    function K(e, t, n, r, i, o) {
+    function G(e, t, n, r, i, o) {
       if (t.isTypeOf) {
         var a = t.isTypeOf(o, e.contextValue, r);
         if ((0, l.default)(a))
           return a.then(function (r) {
-            if (!r) throw G(t, o, n);
+            if (!r) throw K(t, o, n);
             return U(e, t, n, i, o);
           });
-        if (!a) throw G(t, o, n);
+        if (!a) throw K(t, o, n);
       }
       return U(e, t, n, i, o);
     }
-    function G(e, t, n) {
+    function K(e, t, n) {
       return new v.GraphQLError(
         'Expected value of type "'
           .concat(e.name, '" but got: ')
@@ -16556,8 +16556,8 @@ PERFORMANCE OF THIS SOFTWARE.
       w = n(271),
       D = n(272),
       A = n(273),
-      k = n(274),
-      L = n(275),
+      L = n(274),
+      k = n(275),
       x = n(276),
       P = n(277),
       F = n(278),
@@ -16593,8 +16593,8 @@ PERFORMANCE OF THIS SOFTWARE.
     var M = Object.freeze([
       D.LoneSchemaDefinition,
       A.UniqueOperationTypes,
-      k.UniqueTypeNames,
-      L.UniqueEnumValueNames,
+      L.UniqueTypeNames,
+      k.UniqueEnumValueNames,
       x.UniqueFieldDefinitionNames,
       P.UniqueDirectiveNames,
       u.KnownTypeNames,
@@ -18598,19 +18598,19 @@ PERFORMANCE OF THIS SOFTWARE.
           return e;
         for (
           var A = e.toConfig(),
-            k = new b.ASTDefinitionBuilder(n, function (e) {
-              var t = L[e];
+            L = new b.ASTDefinitionBuilder(n, function (e) {
+              var t = k[e];
               if (void 0 === t)
                 throw new Error('Unknown type: "'.concat(e, '".'));
               return t;
             }),
-            L = (0, c.default)(
+            k = (0, c.default)(
               g,
               function (e) {
                 return e.name.value;
               },
               function (e) {
-                return k.buildType(e);
+                return L.buildType(e);
               }
             ),
             x = 0,
@@ -18619,7 +18619,7 @@ PERFORMANCE OF THIS SOFTWARE.
           x++
         ) {
           var F = P[x];
-          L[F.name] = ee(F);
+          k[F.name] = ee(F);
         }
         var R = {
           query: A.query && A.query.name,
@@ -18630,11 +18630,11 @@ PERFORMANCE OF THIS SOFTWARE.
           for (var M = 0, Q = T.operationTypes; M < Q.length; M++) {
             var V = Q[M],
               C = V.operation,
-              K = V.type;
-            R[C] = K.name.value;
+              G = V.type;
+            R[C] = G.name.value;
           }
-        for (var G = 0; G < N.length; G++) {
-          var U = N[G];
+        for (var K = 0; K < N.length; K++) {
+          var U = N[K];
           if (U.operationTypes)
             for (var q = 0, B = U.operationTypes; q < B.length; q++) {
               var Y = B[q],
@@ -18648,13 +18648,13 @@ PERFORMANCE OF THIS SOFTWARE.
           query: Z(R.query),
           mutation: Z(R.mutation),
           subscription: Z(R.subscription),
-          types: (0, i.default)(L),
+          types: (0, i.default)(k),
           directives:
             ((W = e.getDirectives().map(te)),
             W || (0, s.default)(0, 'schema must have default directives'),
             W.concat(
               _.map(function (e) {
-                return k.buildDirective(e);
+                return L.buildDirective(e);
               })
             )),
           astNode: T || A.astNode,
@@ -18670,10 +18670,10 @@ PERFORMANCE OF THIS SOFTWARE.
             : X(e);
         }
         function X(e) {
-          return L[e.name];
+          return k[e.name];
         }
         function Z(e) {
-          return e ? L[e] : null;
+          return e ? k[e] : null;
         }
         function ee(e) {
           return (0, v.isIntrospectionType)(e) ||
@@ -18703,7 +18703,7 @@ PERFORMANCE OF THIS SOFTWARE.
                       return [].concat(
                         e.getInterfaces().map(X),
                         i.map(function (e) {
-                          return k.getNamedType(e);
+                          return L.getNamedType(e);
                         })
                       );
                     },
@@ -18718,7 +18718,7 @@ PERFORMANCE OF THIS SOFTWARE.
                             return e.name.value;
                           },
                           function (e) {
-                            return k.buildField(e);
+                            return L.buildField(e);
                           }
                         )
                       );
@@ -18747,7 +18747,7 @@ PERFORMANCE OF THIS SOFTWARE.
                             return e.name.value;
                           },
                           function (e) {
-                            return k.buildField(e);
+                            return L.buildField(e);
                           }
                         )
                       );
@@ -18769,7 +18769,7 @@ PERFORMANCE OF THIS SOFTWARE.
                       return [].concat(
                         e.getTypes().map(X),
                         i.map(function (e) {
-                          return k.getNamedType(e);
+                          return L.getNamedType(e);
                         })
                       );
                     },
@@ -18796,7 +18796,7 @@ PERFORMANCE OF THIS SOFTWARE.
                           return e.name.value;
                         },
                         function (e) {
-                          return k.buildEnumValue(e);
+                          return L.buildEnumValue(e);
                         }
                       )
                     ),
@@ -18826,7 +18826,7 @@ PERFORMANCE OF THIS SOFTWARE.
                             return e.name.value;
                           },
                           function (e) {
-                            return k.buildInputField(e);
+                            return L.buildInputField(e);
                           }
                         )
                       );
@@ -21083,7 +21083,7 @@ PERFORMANCE OF THIS SOFTWARE.
       A = function (e, t, n) {
         return 'function' == typeof e ? e(n, t) : e;
       },
-      k = function (e) {
+      L = function (e) {
         return S(void 0, void 0, void 0, function () {
           var t, n, r, i, o, u, c, l, v, h, m, b, T;
           return j(this, function (g) {
@@ -21147,7 +21147,7 @@ PERFORMANCE OF THIS SOFTWARE.
                       var i = r ? I(I({}, b(e, t, n)), r(n)) : b(e, t, n),
                         o = i.parseResponse,
                         a = w(i, ['parseResponse']);
-                      if ('query' === L(a.query)) {
+                      if ('query' === k(a.query)) {
                         var u = I(
                           I(I({}, a), { fetchPolicy: 'network-only' }),
                           A(v.query, e, t)
@@ -21178,7 +21178,7 @@ PERFORMANCE OF THIS SOFTWARE.
           });
         });
       },
-      L = function (e) {
+      k = function (e) {
         if (e && e.definitions && e.definitions.length > 0)
           return e.definitions[0].operation;
         throw new Error('Unable to determine the query operation');
@@ -21248,7 +21248,7 @@ PERFORMANCE OF THIS SOFTWARE.
           r
         );
       },
-      K = (e, t, n) => (r, i) => {
+      G = (e, t, n) => (r, i) => {
         const o = e.types
             .find((e) => e.name === t.type.name)
             .fields.find((e) => e.name === i),
@@ -21258,8 +21258,8 @@ PERFORMANCE OF THIS SOFTWARE.
               : n.data[i];
         return t.type.fields.some((e) => e.name === i) ? { ...r, [i]: a } : r;
       },
-      G = (e) => (t, n, r, i) => {
-        const o = K(e, t, r);
+      K = (e) => (t, n, r, i) => {
+        const o = G(e, t, r);
         let a = null;
         const u = t.type.name;
         if (u) {
@@ -21279,7 +21279,7 @@ PERFORMANCE OF THIS SOFTWARE.
         );
       },
       U = (e) => (t, n, r, i) => {
-        const o = K(e, t, r);
+        const o = G(e, t, r);
         return Object.keys(r.data).reduce(o, {});
       },
       q = (e, t) =>
@@ -21306,9 +21306,9 @@ PERFORMANCE OF THIS SOFTWARE.
         case 'CREATE':
           return { objects: U(e)(t, n, r, i) };
         case 'UPDATE':
-          return { _set: G(e)(t, n, r, i), where: { id: { _eq: r.id } } };
+          return { _set: K(e)(t, n, r, i), where: { id: { _eq: r.id } } };
         case 'UPDATE_MANY':
-          return { _set: G(e)(t, n, r, i), where: { id: { _in: r.ids } } };
+          return { _set: K(e)(t, n, r, i), where: { id: { _in: r.ids } } };
       }
     };
     const Y = (e = {}) =>
@@ -21599,7 +21599,7 @@ PERFORMANCE OF THIS SOFTWARE.
             ),
           r
         );
-      return k(a()({}, se, { buildQuery: o }, e)).then(
+      return L(a()({}, se, { buildQuery: o }, e)).then(
         (e) => (t, n, r) => e(t, n, r)
       );
     };
@@ -22773,3 +22773,25 @@ PERFORMANCE OF THIS SOFTWARE.
       j = n(288);
   },
 ]);
+void 0 === LIB && console.error('esm-webpack-plugin: nothing exported!');
+const _LIB$buildFields = LIB.buildFields,
+  _LIB$buildMetaArgs = LIB.buildMetaArgs,
+  _LIB$buildArgs = LIB.buildArgs,
+  _LIB$buildApolloArgs = LIB.buildApolloArgs,
+  _LIB$defaultBuildVariables = LIB.defaultBuildVariables,
+  _LIB$defaultGetResponseParser = LIB.defaultGetResponseParser,
+  _LIB$buildQuery = LIB.buildQuery,
+  _LIB$buildGqlQuery = LIB.buildGqlQuery,
+  _LIB$buildVariables = LIB.buildVariables;
+export default LIB.default;
+export {
+  _LIB$buildFields as buildFields,
+  _LIB$buildMetaArgs as buildMetaArgs,
+  _LIB$buildArgs as buildArgs,
+  _LIB$buildApolloArgs as buildApolloArgs,
+  _LIB$defaultBuildVariables as defaultBuildVariables,
+  _LIB$defaultGetResponseParser as defaultGetResponseParser,
+  _LIB$buildQuery as buildQuery,
+  _LIB$buildGqlQuery as buildGqlQuery,
+  _LIB$buildVariables as buildVariables,
+};
