@@ -21313,7 +21313,7 @@ PERFORMANCE OF THIS SOFTWARE.
     };
     const Y = (e = {}) =>
       Object.keys(e).reduce((t, n) => {
-        if (n.startsWith('_')) return t;
+        if (n.startsWith('__')) return t;
         const r = e[n];
         return null == r
           ? t

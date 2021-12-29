@@ -12,7 +12,7 @@ import {
 
 const sanitizeResource = (data = {}) => {
   const result = Object.keys(data).reduce((acc, key) => {
-    if (key.startsWith('_')) {
+    if (key.startsWith('__')) {
       return acc;
     }
 
