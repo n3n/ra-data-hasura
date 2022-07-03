@@ -1,6 +1,6 @@
 # ra-data-hasura
 
-A GraphQL data provider for [react-admin](https://marmelab.com/react-admin) tailored to target [Hasura](https://hasura.io/) GraphQL endpoints.
+A GraphQL data provider for [react-admin v4](https://marmelab.com/react-admin) tailored to target [Hasura](https://hasura.io/) GraphQL endpoints. For React Admin v3 use v0.4.2 of this library.
 
 - [ra-data-hasura](#ra-data-hasura)
   - [Benefits and Motivation](#benefits-and-motivation)
@@ -11,11 +11,14 @@ A GraphQL data provider for [react-admin](https://marmelab.com/react-admin) tail
     - [Customize the Apollo client](#customize-the-apollo-client)
     - [Adding Authentication Headers](#adding-authentication-headers)
     - [Customize the introspection](#customize-the-introspection)
+    - [Customize the Data Return](#customize-the-data-return)
   - [Customizing queries](#customizing-queries)
     - [Example: extending a query to include related entities](#example-extending-a-query-to-include-related-entities)
     - [Example: write a completely custom query](#example-write-a-completely-custom-query)
   - [Special Filter Feature](#special-filter-feature)
     - [Nested filtering](#nested-filtering)
+    - [Jsonb filtering](#jsonb-filtering)
+  - [Sorting lists by multiple columns](#sorting-lists-by-multiple-columns)
   - [Contributing](#contributing)
   - [Credits](#credits)
 
@@ -71,7 +74,7 @@ const App = () => {
   useEffect(() => {
     const buildDataProvider = async () => {
       const dataProvider = await buildHasuraProvider({
-        clientOptions: { uri: 'http://localhost:8080/v1/graphql' }
+        clientOptions: { uri: 'http://localhost:8080/v1/graphql' },
       });
       setDataProvider(() => dataProvider);
     };
@@ -210,30 +213,31 @@ buildHasuraProvider({ client: myClientWithAuth });
 
 <summary style="margin-bottom: 10px">Adding headers using just client options</summary>
 
-  You can also add headers using only client options rather than the client itself:
-    
-  ```js
-  import { createHttpLink } from '@apollo/client';
-  import { setContext } from '@apollo/client/link/context';
+You can also add headers using only client options rather than the client itself:
 
-  const authLink = setContext((_, { headers }) => ({
-    headers: {
-      ...headers,
-      'x-hasura-admin-secret': 'hasuraAdminSecret',
-      // 'Authorization': `Bearer xxxx`,
-    },
-  }));
+```js
+import { createHttpLink } from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
 
-  const httpLink = createHttpLink({
-    uri: "http://localhost:8080/v1/graphql",
-  });
+const authLink = setContext((_, { headers }) => ({
+  headers: {
+    ...headers,
+    'x-hasura-admin-secret': 'hasuraAdminSecret',
+    // 'Authorization': `Bearer xxxx`,
+  },
+}));
 
-  const clientOptionsWithAuth = {
-    link: authLink.concat(httpLink),
-  };
+const httpLink = createHttpLink({
+  uri: 'http://localhost:8080/v1/graphql',
+});
 
-  buildHasuraProvider({ client: clientOptionsWithAuth });
-  ```
+const clientOptionsWithAuth = {
+  link: authLink.concat(httpLink),
+};
+
+buildHasuraProvider({ client: clientOptionsWithAuth });
+```
+
 </details>
 
 ### Customize the introspection
@@ -277,6 +281,62 @@ Pass the introspection options to the `buildApolloProvider` function:
 buildApolloProvider({ introspection: introspectionOptions });
 ```
 
+### Customize the Data Return
+
+Once the data is returned back from the provider, you can customize it by implementing the `DataProvider` interface. [An example is changing the ID key](https://marmelab.com/react-admin/FAQ.html#can-i-have-custom-identifiersprimary-keys-for-my-resources).
+
+```typescript
+const [dataProvider, setDataProvider] = React.useState<DataProvider | null>(
+  null
+);
+
+React.useEffect(() => {
+  const buildDataProvider = async () => {
+    const dataProviderHasura = await buildHasuraProvider({
+      clientOptions: {
+        uri: 'http://localhost:8080/v1/graphql',
+      },
+    });
+    const modifiedProvider: DataProvider = {
+      getList: async (resource, params) => {
+        let { data, ...metadata } = await dataProviderHasura.getList(
+          resource,
+          params
+        );
+
+        if (resource === 'example_resource_name') {
+          data = data.map(
+            (val): Record => ({
+              ...val,
+              id: val.region_id,
+            })
+          );
+        }
+
+        return {
+          data: data as any[],
+          ...metadata,
+        };
+      },
+      getOne: (resource, params) => dataProviderHasura.getOne(resource, params),
+      getMany: (resource, params) =>
+        dataProviderHasura.getMany(resource, params),
+      getManyReference: (resource, params) =>
+        dataProviderHasura.getManyReference(resource, params),
+      update: (resource, params) => dataProviderHasura.update(resource, params),
+      updateMany: (resource, params) =>
+        dataProviderHasura.updateMany(resource, params),
+      create: (resource, params) => dataProviderHasura.create(resource, params),
+      delete: (resource, params) => dataProviderHasura.delete(resource, params),
+      deleteMany: (resource, params) =>
+        dataProviderHasura.deleteMany(resource, params),
+    };
+    setDataProvider(() => modifiedProvider);
+  };
+  buildDataProvider();
+}, []);
+```
+
 ## Customizing queries
 
 Queries built by this data provider are made up of 3 parts:
@@ -289,23 +349,24 @@ Each of these can be customized - functions overriding numbers 2 and 3 can be pa
 
 ```js
 {
-    buildFields?: Function,
-    buildMetaArgs?: Function,
-    buildArgs?: Function,
-    buildApolloArgs?: Function,
+  buildFields?: Function,
+  buildMetaArgs?: Function,
+  buildArgs?: Function,
+  buildApolloArgs?: Function,
 }
 ```
 
 A likely scenario is that you want to override only the `buildFields` part so that you can customize your GraphQL queries - requesting fewer fields, more fields, nested fields etc.
 
-This can be easily done, and importantly can be done using `gql` template literal tags, as shown in the exmples below. Take a look at this [demo application](https://github.com/cpv123/react-admin-hasura-queries) to see it in action.
+This can be easily done, and importantly can be done using `gql` template literal tags, as shown in the examples below. Take a look at this [demo application](https://github.com/cpv123/react-admin-hasura-queries) to see it in action.
 
 ### Example: extending a query to include related entities
 
 By default, the data provider will generate queries that include all fields on a resource, but without any relationships to nested entities. If you would like to keep these base fields but extend the query to also include related entities, then you can write a custom `buildFields` like this:
 
-```jsx
+```ts
 import buildDataProvider, { buildFields } from 'ra-data-hasura';
+import type { BuildFields } from 'ra-data-hasura';
 import gql from 'graphql-tag';
 
 /**
@@ -327,7 +388,7 @@ const EXTENDED_GET_ONE_USER = gql`
   }
 `;
 
-const customBuildFields = (type, fetchType) => {
+const customBuildFields: BuildFields = (type, fetchType) => {
   const resourceName = type.name;
 
   // First take the default fields (all, but no related or nested).
@@ -350,9 +411,10 @@ buildDataProvider(options, { buildFields: customBuildFields });
 
 If you want full control over the GraphQL query, then you can define the entire set of fields like this:
 
-```jsx
+```ts
 import gql from 'graphql-tag';
 import buildDataProvider, { buildFields } from 'ra-data-hasura';
+import type { BuildFields } from 'ra-data-hasura';
 
 /**
  * Extracts just the fields from a GraphQL AST.
@@ -380,7 +442,7 @@ const GET_ONE_USER = gql`
   }
 `;
 
-const customBuildFields = (type, fetchType) => {
+const customBuildFields: BuildFields = (type, fetchType) => {
   const resourceName = type.name;
 
   if (resourceName === 'users' && fetchType === 'GET_ONE') {
@@ -497,6 +559,99 @@ Will produce the following payload:
   }
 }
 ```
+
+## Jsonb filtering
+
+```jsx
+<TextField label="Theme Color" source="users#preferences@_contains@ux#theme" />
+```
+
+Will produce payload:
+
+```json
+{
+  "where": {
+    "_and": [
+      {
+        "users": {
+          "preferences": {
+            "_contains": {
+              "ux": {
+                "theme": "%TEXT"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "limit": 10,
+  "offset": 0,
+  "order_by": {
+    "id": "asc"
+  }
+}
+```
+
+Fetch data matching a jsonb `_contains` operation
+
+```jsx
+<FunctionField render={(rec: {processor = "apple" | "google" | "stripe", ...})
+  <ReferenceManyField
+    reference="account_plans"
+    target="payments#details@_contains@processor#${rec.processor}_id"
+    source="payment_processor"
+  >
+    <Datagrid>
+    ...
+    </Datagrid>
+  </ReferenceManyField>
+} />
+```
+
+Will produce payload:
+
+```json
+{
+  "where": {
+    "_and": [
+      {
+        "payments": {
+          "details": {
+            "_contains": {
+              "processor": {
+                "%{rec.processor}_id": "%{rec.id}"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+## Sorting lists by multiple columns
+
+Hasura support [sorting by multiple fields](https://hasura.io/docs/latest/graphql/core/databases/postgres/queries/sorting.html#sorting-by-multiple-fields) but React Admin itself doesn't allow the `List` component to receive an array as the `sort` prop. So to achieve sorting by multiple fields, separate the field and order values using a comma.
+
+For example, a list like
+
+```jsx
+const TodoList = (props) => (
+  <List sort={{ field: 'title,is_completed', order: 'asc,desc' }} {...props}>
+    <Datagrid rowClick="edit">...</Datagrid>
+  </List>
+);
+```
+
+will generate a query with an `order_by` variable like
+
+```
+order_by: [{ title: "asc" }, { is_completed: "desc" }]
+```
+
+Fields may contain dots to specify sorting by nested object properties similarly to React Admin `source` property.
 
 ## Contributing
 
