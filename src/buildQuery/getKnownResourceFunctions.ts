@@ -1,7 +1,6 @@
-import Maybe from 'graphql/tsutils/Maybe';
 import { IntrospectionResult } from '../types';
 
-export function getFunctionName(query: Maybe<string>) {
+export function getFunctionName(query?: string | null) {
   if (typeof query != 'string') return undefined;
 
   const functionReg =
