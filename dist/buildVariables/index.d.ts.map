@@ -1,0 +1,1 @@
+{"version":3,"file":"index.d.ts","sourceRoot":"","sources":["../../src/buildVariables/index.ts"],"names":[],"mappings":"AAeA,OAAO,EAAE,SAAS,EAAE,oBAAoB,EAAE,mBAAmB,EAAE,MAAM,UAAU,CAAC;AAEhF,oBAAY,cAAc,GAAG,CAC3B,oBAAoB,EAAE,mBAAmB,KACtC,CACH,QAAQ,EAAE,oBAAoB,EAC9B,YAAY,EAAE,SAAS,EACvB,MAAM,EAAE,GAAG,EACX,SAAS,EAAE,GAAG,KACX,GAAG,CAAC;AAET,eAAO,MAAM,cAAc,EAAE,cA+E1B,CAAC"}
