@@ -1,5 +1,5 @@
 import { FetchType, IntrospectedResource, IntrospectionResult } from '../types';
-export declare type BuildVariables = (
+export type BuildVariables = (
   introspectionResults: IntrospectionResult
 ) => (
   resource: IntrospectedResource,

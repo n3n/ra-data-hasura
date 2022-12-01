@@ -3,7 +3,7 @@ import {
   IntrospectionTypeRef,
   IntrospectionNonNullTypeRef,
 } from 'graphql';
-declare type GraphQLTypes =
+type GraphQLTypes =
   | IntrospectionType
   | IntrospectionNonNullTypeRef
   | IntrospectionTypeRef;

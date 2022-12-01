@@ -49,7 +49,7 @@ var __importDefault =
     return mod && mod.__esModule ? mod : { default: mod };
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-const gqlTypes = __importStar(require('graphql-ast-types-browser'));
+const gqlTypes = __importStar(require('../graphql-ast-types-browser'));
 const getFinalType_1 = __importDefault(require('./getFinalType'));
 const isRequired_1 = __importDefault(require('./isRequired'));
 const isList_1 = __importDefault(require('./isList'));

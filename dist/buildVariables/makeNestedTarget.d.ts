@@ -1,7 +1,7 @@
-declare type TargetEquals = {
+type TargetEquals = {
   _eq: any;
 };
-declare type NestedTarget<K> =
+type NestedTarget<K> =
   | K
   | {
       [key: string]: K | NestedTarget<K>;

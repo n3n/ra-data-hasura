@@ -2,7 +2,7 @@ import { IntrospectionField } from 'graphql';
 import { BuildFields } from './buildFields';
 import { BuildArgs, BuildMetaArgs, BuildApolloArgs } from './buildArgs';
 import { FetchType, IntrospectionResult } from '../types';
-export declare type BuildGqlQuery = (
+export type BuildGqlQuery = (
   introspectionResults: IntrospectionResult,
   buildFields: BuildFields,
   buildMetaArgs: BuildMetaArgs,
@@ -15,7 +15,7 @@ export declare type BuildGqlQuery = (
   queryType: IntrospectionField,
   variables: any
 ) => any;
-export declare type BuildGqlQueryFactory = (
+export type BuildGqlQueryFactory = (
   introspectionResults: IntrospectionResult
 ) => ReturnType<BuildGqlQuery>;
 export declare const buildGqlQuery: BuildGqlQuery;

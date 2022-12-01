@@ -1,21 +1,24 @@
 import { BuildGqlQueryFactory } from '../buildGqlQuery';
 import { GetResponseParser } from '../getResponseParser';
 import type { FetchType, IntrospectionResult } from '../types';
-export declare type BuildQuery = (
-  introspectionResults: IntrospectionResult
-) => (
+export type QueryResponse = {
+  data: any;
+  total?: number;
+  pageInfo?: {
+    hasNextPage?: boolean;
+    hasPreviousPage?: boolean;
+  };
+};
+export type BuildQuery = (introspectionResults: IntrospectionResult) => (
   aorFetchType: FetchType,
   resourceName: string,
   params: any
 ) => {
   query: any;
   variables: any;
-  parseResponse: ({ data }: any) => {
-    data: any;
-    total?: number;
-  };
+  parseResponse: ({ data }: any) => QueryResponse;
 };
-export declare type BuildQueryFactory = (
+export type BuildQueryFactory = (
   buildVariablesImpl: any,
   buildGqlQueryImpl: BuildGqlQueryFactory,
   getResponseParserImpl: GetResponseParser

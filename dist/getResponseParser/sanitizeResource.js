@@ -3,6 +3,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 exports.sanitizeResource = void 0;
 const sanitizeResource = (data = {}) => {
   const result = Object.keys(data).reduce((acc, key) => {
+    // intend to remove the following reserved names https://spec.graphql.org/draft/#sec-Names.Reserved-Names
     if (key.startsWith('__')) {
       return acc;
     }

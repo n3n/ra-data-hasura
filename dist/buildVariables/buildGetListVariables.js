@@ -16,6 +16,13 @@ const buildGetListVariables = () => (resource, _, params) => {
   const result = {};
   let { filter: filterObj = {} } = params;
   const { customFilters = [] } = params;
+  const distinctOnField = 'distinct_on';
+  /** Setting "distinct_on" to be the `filters` object attribute to be used inside RA
+   * and setting to a `distinct_on` variable
+   * and removing from the filter object
+   */
+  const { distinct_on = '' } = filterObj;
+  filterObj = (0, omit_1.default)(filterObj, [distinctOnField]);
   /**
    * Nested entities are parsed by CRA, which returns a nested object
    * { 'level1': {'level2': 'test'}}
@@ -74,20 +81,26 @@ const buildGetListVariables = () => (resource, _, params) => {
         [operation]: value,
       });
     } else if (obj[key] && obj[key].format === 'hasura-raw-query') {
-      filter = { [key]: obj[key].value || {} };
+      filter = (0, set_1.default)(
+        {},
+        key.split(SPLIT_TOKEN),
+        obj[key].value || {}
+      );
     } else {
       let [keyName, operation = ''] = key.split(SPLIT_OPERATION);
       let operator;
+      if (operation === '{}') operator = {};
       const field = resource.type.fields.find((f) => f.name === keyName);
       if (field) {
         switch ((0, getFinalType_1.default)(field.type).name) {
           case 'String':
             operation = operation || '_ilike';
-            operator = {
-              [operation]: operation.includes('like')
-                ? `%${obj[key]}%`
-                : obj[key],
-            };
+            if (!operator)
+              operator = {
+                [operation]: operation.includes('like')
+                  ? `%${obj[key]}%`
+                  : obj[key],
+              };
             filter = (0, set_1.default)(
               {},
               keyName.split(SPLIT_TOKEN),
@@ -95,24 +108,28 @@ const buildGetListVariables = () => (resource, _, params) => {
             );
             break;
           default:
-            operator = {
-              [operation]: operation.includes('like')
-                ? `%${obj[key]}%`
-                : obj[key],
-            };
-            filter = (0, set_1.default)({}, keyName.split(SPLIT_TOKEN), {
-              [operation || '_eq']: obj[key],
-            });
+            if (!operator)
+              operator = {
+                [operation || '_eq']: operation.includes('like')
+                  ? `%${obj[key]}%`
+                  : obj[key],
+              };
+            filter = (0, set_1.default)(
+              {},
+              keyName.split(SPLIT_TOKEN),
+              operator
+            );
         }
       } else {
         // Else block runs when the field is not found in Graphql schema.
         // Most likely it's nested. If it's not, it's better to let
         // Hasura fail with a message than silently fail/ignore it
-        operator = {
-          [operation || '_eq']: operation.includes('like')
-            ? `%${obj[key]}%`
-            : obj[key],
-        };
+        if (!operator)
+          operator = {
+            [operation || '_eq']: operation.includes('like')
+              ? `%${obj[key]}%`
+              : obj[key],
+          };
         filter = (0, set_1.default)({}, keyName.split(SPLIT_TOKEN), operator);
       }
     }
@@ -157,6 +174,9 @@ const buildGetListVariables = () => (resource, _, params) => {
     } else {
       result['order_by'] = (0, set_1.default)({}, field, order.toLowerCase());
     }
+  }
+  if (distinct_on) {
+    result['distinct_on'] = distinct_on;
   }
   return result;
 };

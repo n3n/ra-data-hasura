@@ -50,7 +50,7 @@ var __importDefault =
   };
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.buildApolloArgs = exports.buildMetaArgs = exports.buildArgs = void 0;
-const gqlTypes = __importStar(require('graphql-ast-types-browser'));
+const gqlTypes = __importStar(require('../graphql-ast-types-browser'));
 const fetchActions_1 = require('../helpers/fetchActions');
 const getArgType_1 = __importDefault(require('../helpers/getArgType'));
 const buildArgs = (query, variables) => {

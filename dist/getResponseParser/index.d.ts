@@ -1,12 +1,10 @@
 import { IntrospectionResult, IntrospectedResource, FetchType } from '../types';
-export declare type GetResponseParser = (
+import { QueryResponse } from '../buildQuery';
+export type GetResponseParser = (
   introspectionResults: IntrospectionResult
 ) => (
   aorFetchType: FetchType,
   resource?: IntrospectedResource
-) => (res: { data: any }) => {
-  data: any;
-  total?: number;
-};
+) => (res: { data: any }) => QueryResponse;
 export declare const getResponseParser: GetResponseParser;
 //# sourceMappingURL=index.d.ts.map

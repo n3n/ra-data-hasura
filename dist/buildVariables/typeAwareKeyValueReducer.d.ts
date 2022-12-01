@@ -6,7 +6,7 @@ import { IntrospectionResult, IntrospectedResource } from '../types';
  * See https://github.com/marmelab/react-admin/pull/6199
  *
  */
-declare type TypeAwareKeyValueReducer = (
+type TypeAwareKeyValueReducer = (
   introspectionResults: IntrospectionResult,
   resource: IntrospectedResource,
   params: any

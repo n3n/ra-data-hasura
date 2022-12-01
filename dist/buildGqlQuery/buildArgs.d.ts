@@ -4,16 +4,16 @@ import {
   VariableDefinitionNode,
 } from 'graphql';
 import { FetchType } from '../types';
-export declare type BuildArgs = (
+export type BuildArgs = (
   query: IntrospectionField,
   variables: any
 ) => ArgumentNode[];
-export declare type BuildMetaArgs = (
+export type BuildMetaArgs = (
   query: IntrospectionField,
   variables: any,
   aorFetchType: FetchType
 ) => ArgumentNode[];
-export declare type BuildApolloArgs = (
+export type BuildApolloArgs = (
   query: IntrospectionField,
   variables: any
 ) => VariableDefinitionNode[];

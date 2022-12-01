@@ -1,6 +1,6 @@
 import { IntrospectionObjectType, FieldNode } from 'graphql';
 import { FetchType } from '../types';
-export declare type BuildFields = (
+export type BuildFields = (
   type: IntrospectionObjectType,
   aorFetchType?: FetchType
 ) => FieldNode[];

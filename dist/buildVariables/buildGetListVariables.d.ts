@@ -3,7 +3,7 @@ import type {
   IntrospectionResult,
   IntrospectedResource,
 } from '../types';
-declare type BuildGetListVariables = (
+type BuildGetListVariables = (
   introspectionResults: IntrospectionResult
 ) => (
   resource: IntrospectedResource,

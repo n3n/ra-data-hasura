@@ -8,10 +8,19 @@ const getResponseParser = () => (aorFetchType) => (res) => {
   switch (aorFetchType) {
     case fetchActions_1.GET_MANY_REFERENCE:
     case fetchActions_1.GET_LIST:
-      return {
+      let output = {
         data: response.items.map(sanitizeResource_1.sanitizeResource),
-        total: response.total.aggregate.count,
       };
+      if (typeof response.total !== 'undefined') {
+        output.total = response.total.aggregate.count;
+      } else {
+        // TODO: behave smarter and set hasNextPage=false when no more records exist.
+        output.pageInfo = {
+          hasPreviousPage: true,
+          hasNextPage: true,
+        };
+      }
+      return output;
     case fetchActions_1.GET_MANY:
       return { data: response.items.map(sanitizeResource_1.sanitizeResource) };
     case fetchActions_1.GET_ONE:

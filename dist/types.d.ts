@@ -15,12 +15,12 @@ export declare enum FetchType {
   DELETE = 'DELETE',
   DELETE_MANY = 'DELETE_MANY',
 }
-export declare type IntrospectedResource = {
+export type IntrospectedResource = {
   type: IntrospectionObjectType;
 } & {
   [fetchType in FetchType]: IntrospectionField;
 };
-export declare type IntrospectionResult = {
+export type IntrospectionResult = {
   types: IntrospectionType[];
   queries: IntrospectionObjectType[];
   resources: IntrospectedResource[];

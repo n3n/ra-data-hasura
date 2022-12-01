@@ -51,7 +51,7 @@ var __importDefault =
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.buildFields = void 0;
 const graphql_1 = require('graphql');
-const gqlTypes = __importStar(require('graphql-ast-types-browser'));
+const gqlTypes = __importStar(require('../graphql-ast-types-browser'));
 const getFinalType_1 = __importDefault(require('../helpers/getFinalType'));
 const buildFields = (type) =>
   type.fields.reduce((acc, field) => {

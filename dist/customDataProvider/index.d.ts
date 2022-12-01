@@ -7,7 +7,7 @@ import {
   BuildApolloArgs,
 } from '../buildGqlQuery/buildArgs';
 import { BuildFields } from '../buildGqlQuery/buildFields';
-export declare type BuildCustomDataProvider = (
+export type BuildCustomDataProvider = (
   options: Partial<Options>,
   buildGqlQueryOverrides?: {
     buildFields?: BuildFields;
