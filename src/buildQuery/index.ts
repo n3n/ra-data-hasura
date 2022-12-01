@@ -5,6 +5,15 @@ import type { FetchType, IntrospectionResult } from '../types';
 import { findResourceFunction } from './findResourceFunction';
 import { getKnownResourceFunctions } from './getKnownResourceFunctions';
 
+export type QueryResponse = {
+  data: any;
+  total?: number;
+  pageInfo?: {
+    hasNextPage?: boolean;
+    hasPreviousPage?: boolean;
+  };
+};
+
 export type BuildQuery = (introspectionResults: IntrospectionResult) => (
   aorFetchType: FetchType,
   resourceName: string,
@@ -12,7 +21,7 @@ export type BuildQuery = (introspectionResults: IntrospectionResult) => (
 ) => {
   query: any;
   variables: any;
-  parseResponse: ({ data }: any) => { data: any; total?: number };
+  parseResponse: ({ data }: any) => QueryResponse;
 };
 
 export type BuildQueryFactory = (

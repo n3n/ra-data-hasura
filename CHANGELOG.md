@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.4 (November 22, 2022)
+
+- Update all dependencies
+- Fix: remove `graphql-ast-types-browser` dependency
+
+## 0.5.3 (August 16, 2022)
+
+- Feature: distinct_on support (#124), thanks to @bharatkashyap
+- Feature: added support for empty operator in buildGetListVariables (#125), thanks to @ofilipowicz
+
+## 0.5.2 (July 27, 2022)
+
+- Update to GraphQL 16
+- Fix: only filter out GraphQL reserved names (#116), thanks to @n3n
+- Feature: Support skipping count aggregate on hasura (#120), thanks to @mohammad-bolt
+
 ## 0.5.1 (June 14, 2022)
 
 - Fix dependency issue
