@@ -29,6 +29,19 @@ export {
   buildCustomDataProvider as buildHasuraProvider,
   buildCustomDataProvider as default,
 } from './customDataProvider';
-export type { BuildCustomDataProvider } from './customDataProvider';
+export type {
+  BuildCustomDataProvider,
+  HasuraDataProvider,
+  CustomDataProviderOptions,
+} from './customDataProvider';
+
+export { buildActionMethods } from './actions';
+export type {
+  ActionMethods,
+  ActionMutation,
+  ActionQuery,
+  ActionOptions,
+  ActionFetchPolicy,
+} from './actions';
 
 export { FetchType } from './types';
