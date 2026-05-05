@@ -723,7 +723,7 @@ Now use this local package in your React app for testing:
 
 ```sh
 cd my-react-app
-npm link ra-data-hasura
+npm link @aginix/ra-data-hasura
 ```
 
 Build the library by running `npm run build` — output is generated in the `dist` folder.
