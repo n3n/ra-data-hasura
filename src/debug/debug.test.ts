@@ -22,14 +22,15 @@ const buildFakeFactory =
   });
 
 const spyConsole = () => {
-  const log = jest.spyOn(console, 'log').mockImplementation(() => {});
-  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
-  const groupCollapsed = jest
-    .spyOn(console, 'groupCollapsed')
-    .mockImplementation(() => {});
-  const group = jest.spyOn(console, 'group').mockImplementation(() => {});
-  const groupEnd = jest.spyOn(console, 'groupEnd').mockImplementation(() => {});
-  return { log, error, groupCollapsed, group, groupEnd };
+  jest.spyOn(console, 'group').mockImplementation(() => {});
+  jest.spyOn(console, 'groupEnd').mockImplementation(() => {});
+  return {
+    log: jest.spyOn(console, 'log').mockImplementation(() => {}),
+    error: jest.spyOn(console, 'error').mockImplementation(() => {}),
+    groupCollapsed: jest
+      .spyOn(console, 'groupCollapsed')
+      .mockImplementation(() => {}),
+  };
 };
 
 afterEach(() => {

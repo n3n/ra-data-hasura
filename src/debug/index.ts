@@ -5,7 +5,7 @@ import type { IntrospectionResult } from '../types';
 
 type RequestCtx = {
   id: number;
-  fetchType: string;
+  method: string;
   resource: string;
   start: number;
 };
@@ -33,14 +33,12 @@ export const createDebugger = (): Debugger => {
   let counter = 0;
   let introspectionStartedAt = 0;
   let introspectionLogged = false;
-  let introspectionRequested = false;
   const pending: RequestCtx[] = [];
 
   const safe = (fn: () => void) => {
     try {
       fn();
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error(`${TAG} debug logging failed`, err);
     }
   };
@@ -53,7 +51,6 @@ export const createDebugger = (): Debugger => {
           ? Date.now() - introspectionStartedAt
           : 0;
         safe(() => {
-          // eslint-disable-next-line no-console
           console.log(`${TAG} introspection complete`, {
             durationMs,
             resources: introspectionResults.resources.length,
@@ -64,14 +61,11 @@ export const createDebugger = (): Debugger => {
       return (fetchType, resource, params) => {
         const result = realBuildQuery(fetchType, resource, params);
         const ctx = pending.shift();
-        const id = ctx ? ctx.id : 0;
-        const method = ctx ? ctx.fetchType : String(fetchType);
+        const id = ctx?.id ?? 0;
+        const method = ctx?.method ?? String(fetchType);
         safe(() => {
-          // eslint-disable-next-line no-console
           console.groupCollapsed(`${TAG} #${id} ${method} ${resource}`);
-          // eslint-disable-next-line no-console
           console.log('fetchType', fetchType);
-          // eslint-disable-next-line no-console
           console.log('params', params);
           let queryString: string;
           try {
@@ -79,11 +73,8 @@ export const createDebugger = (): Debugger => {
           } catch {
             queryString = String(result.query);
           }
-          // eslint-disable-next-line no-console
           console.log('query', queryString);
-          // eslint-disable-next-line no-console
           console.log('variables', result.variables);
-          // eslint-disable-next-line no-console
           console.groupEnd();
         });
         return result;
@@ -97,17 +88,15 @@ export const createDebugger = (): Debugger => {
       const original = (provider as unknown as Record<string, unknown>)[method];
       if (typeof original !== 'function') continue;
       wrapped[method] = async (resource: string, params: unknown) => {
-        if (!introspectionRequested) {
-          introspectionRequested = true;
+        if (!introspectionStartedAt) {
           introspectionStartedAt = Date.now();
           safe(() => {
-            // eslint-disable-next-line no-console
             console.log(`${TAG} introspection started`);
           });
         }
         const ctx: RequestCtx = {
           id: ++counter,
-          fetchType: method,
+          method,
           resource,
           start: Date.now(),
         };
@@ -118,13 +107,10 @@ export const createDebugger = (): Debugger => {
           ).call(provider, resource, params);
           const durationMs = Date.now() - ctx.start;
           safe(() => {
-            // eslint-disable-next-line no-console
             console.groupCollapsed(
-              `${TAG} #${ctx.id} ${ctx.fetchType} ${ctx.resource} done (${durationMs}ms)`
+              `${TAG} #${ctx.id} ${ctx.method} ${ctx.resource} done (${durationMs}ms)`
             );
-            // eslint-disable-next-line no-console
             console.log('response', result);
-            // eslint-disable-next-line no-console
             console.groupEnd();
           });
           return result;
@@ -132,16 +118,12 @@ export const createDebugger = (): Debugger => {
           const durationMs = Date.now() - ctx.start;
           safe(() => {
             if (!introspectionLogged) {
-              // eslint-disable-next-line no-console
               console.error(`${TAG} introspection failed`, error);
             }
-            // eslint-disable-next-line no-console
             console.group(
-              `${TAG} #${ctx.id} ${ctx.fetchType} ${ctx.resource} failed (${durationMs}ms)`
+              `${TAG} #${ctx.id} ${ctx.method} ${ctx.resource} failed (${durationMs}ms)`
             );
-            // eslint-disable-next-line no-console
             console.error(error);
-            // eslint-disable-next-line no-console
             console.groupEnd();
           });
           throw error;
