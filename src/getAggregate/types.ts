@@ -2,17 +2,20 @@ export type CountOptions =
   | true
   | { columns?: readonly string[]; distinct?: boolean };
 
-export type ColumnOperator =
-  | 'sum'
-  | 'avg'
-  | 'min'
-  | 'max'
-  | 'stddev'
-  | 'stddev_pop'
-  | 'stddev_samp'
-  | 'variance'
-  | 'var_pop'
-  | 'var_samp';
+export const COLUMN_OPERATORS = [
+  'sum',
+  'avg',
+  'min',
+  'max',
+  'stddev',
+  'stddev_pop',
+  'stddev_samp',
+  'variance',
+  'var_pop',
+  'var_samp',
+] as const;
+
+export type ColumnOperator = (typeof COLUMN_OPERATORS)[number];
 
 export type AggregateFields = {
   count?: CountOptions;

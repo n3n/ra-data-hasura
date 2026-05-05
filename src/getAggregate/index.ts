@@ -38,17 +38,15 @@ export function makeGetAggregate(
     }
 
     const where = buildWhere(params.filter ?? {}, []);
-    const hasDistinctOn = (params.distinctOn?.length ?? 0) > 0;
-
     const query = buildAggregateQuery(
       resource,
       aggregateKey,
       params.aggregate,
-      hasDistinctOn
+      params.distinctOn
     );
 
     const variables: Record<string, any> = { where };
-    if (hasDistinctOn) {
+    if (params.distinctOn?.length) {
       variables.distinct_on = params.distinctOn;
     }
 

@@ -1,18 +1,8 @@
 import { parse, DocumentNode } from 'graphql';
+import { COLUMN_OPERATORS } from './types';
 import type { AggregateFields, CountOptions } from './types';
 
-const COLUMN_OPERATORS = [
-  'sum',
-  'avg',
-  'min',
-  'max',
-  'stddev',
-  'stddev_pop',
-  'stddev_samp',
-  'variance',
-  'var_pop',
-  'var_samp',
-] as const;
+const queryCache = new Map<string, DocumentNode>();
 
 function buildCountSelection(count: CountOptions): string {
   if (count === true) return 'count';
@@ -47,8 +37,18 @@ export function buildAggregateQuery(
   resource: string,
   aggregateFieldName: string,
   aggregate: AggregateFields,
-  hasDistinctOn: boolean
+  distinctOn?: string[]
 ): DocumentNode {
+  const hasDistinctOn = (distinctOn?.length ?? 0) > 0;
+  const cacheKey = JSON.stringify([
+    resource,
+    aggregateFieldName,
+    aggregate,
+    hasDistinctOn,
+  ]);
+  const cached = queryCache.get(cacheKey);
+  if (cached) return cached;
+
   const distinctOnArg = hasDistinctOn
     ? `, $distinct_on: [${resource}_select_column!]`
     : '';
@@ -66,5 +66,7 @@ export function buildAggregateQuery(
     }
   `;
 
-  return parse(queryString);
+  const doc = parse(queryString);
+  queryCache.set(cacheKey, doc);
+  return doc;
 }

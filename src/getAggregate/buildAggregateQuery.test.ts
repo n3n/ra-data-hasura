@@ -9,7 +9,7 @@ describe('buildAggregateQuery', () => {
       'orders',
       'orders_aggregate',
       { count: true },
-      false
+      undefined
     );
     expect(normalize(print(doc))).toMatchInlineSnapshot(
       `"query GetAggregate($where: orders_bool_exp) { orders_aggregate(where: $where) { aggregate { count } } }"`
@@ -21,7 +21,7 @@ describe('buildAggregateQuery', () => {
       'orders',
       'orders_aggregate',
       { count: { columns: ['customer_id'], distinct: true } },
-      false
+      undefined
     );
     expect(normalize(print(doc))).toMatchInlineSnapshot(
       `"query GetAggregate($where: orders_bool_exp) { orders_aggregate(where: $where) { aggregate { count(columns: [customer_id], distinct: true) } } }"`
@@ -33,7 +33,7 @@ describe('buildAggregateQuery', () => {
       'orders',
       'orders_aggregate',
       { sum: ['amount', 'tax'] as const, avg: ['rating'] as const },
-      false
+      undefined
     );
     const printed = normalize(print(doc));
     expect(printed).toContain('sum { amount tax }');
@@ -49,7 +49,7 @@ describe('buildAggregateQuery', () => {
         sum: ['amount'] as const,
         max: ['created_at'] as const,
       },
-      false
+      undefined
     );
     const printed = normalize(print(doc));
     expect(printed).toContain('count');
@@ -62,7 +62,7 @@ describe('buildAggregateQuery', () => {
       'orders',
       'orders_aggregate',
       { count: true },
-      true
+      ['customer_id']
     );
     const printed = normalize(print(doc));
     expect(printed).toContain('$distinct_on: [orders_select_column!]');
@@ -74,7 +74,7 @@ describe('buildAggregateQuery', () => {
       'products',
       'custom_products_agg',
       { count: true },
-      false
+      undefined
     );
     const printed = normalize(print(doc));
     expect(printed).toContain('$where: products_bool_exp');
@@ -86,7 +86,7 @@ describe('buildAggregateQuery', () => {
       'orders',
       'orders_aggregate',
       { count: {} },
-      false
+      undefined
     );
     expect(normalize(print(doc))).toContain('count');
   });
