@@ -119,18 +119,13 @@ export const buildCustomDataProvider: BuildCustomDataProvider = (
   );
 
   const wrappedProvider = dbg ? dbg.wrapDataProvider(provider) : provider;
-
-  const providerWithClient = provider as unknown as {
-    client: Parameters<typeof buildActionMethods>[0]['client'];
-    getIntrospection?: () => Promise<IntrospectionResult> | undefined;
+  const { client, getIntrospection } = provider as unknown as {
+    client: Parameters<typeof buildActionMethods>[0];
+    getIntrospection: () => Promise<IntrospectionResult>;
   };
-  const actionMethods = buildActionMethods({
-    client: providerWithClient.client,
-    getIntrospection: () =>
-      providerWithClient.getIntrospection
-        ? providerWithClient.getIntrospection()
-        : undefined,
-  });
 
-  return Object.assign(wrappedProvider, actionMethods) as HasuraDataProvider;
+  return Object.assign(
+    wrappedProvider,
+    buildActionMethods(client, getIntrospection)
+  ) as HasuraDataProvider;
 };

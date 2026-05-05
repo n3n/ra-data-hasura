@@ -145,10 +145,9 @@ const makeClient = () => {
 describe('buildActionMethods', () => {
   it('builds a mutation that selects all scalar fields by default', async () => {
     const { client, calls } = makeClient();
-    const methods = buildActionMethods({
-      client,
-      getIntrospection: async () => buildIntrospection(),
-    });
+    const methods = buildActionMethods(client, async () =>
+      buildIntrospection()
+    );
 
     await methods.actionMutation('createUser', {
       email: 'a@b.com',
@@ -169,10 +168,9 @@ describe('buildActionMethods', () => {
 
   it('omits a selection set when the action returns a scalar', async () => {
     const { client, calls } = makeClient();
-    const methods = buildActionMethods({
-      client,
-      getIntrospection: async () => buildIntrospection(),
-    });
+    const methods = buildActionMethods(client, async () =>
+      buildIntrospection()
+    );
 
     await methods.actionMutation('sendEmail', { to: 'a@b.com' });
 
@@ -184,10 +182,9 @@ describe('buildActionMethods', () => {
 
   it('honors a custom fields selection string', async () => {
     const { client, calls } = makeClient();
-    const methods = buildActionMethods({
-      client,
-      getIntrospection: async () => buildIntrospection(),
-    });
+    const methods = buildActionMethods(client, async () =>
+      buildIntrospection()
+    );
 
     await methods.actionMutation(
       'createUser',
@@ -202,10 +199,9 @@ describe('buildActionMethods', () => {
 
   it('also accepts a fields string already wrapped in braces', async () => {
     const { client, calls } = makeClient();
-    const methods = buildActionMethods({
-      client,
-      getIntrospection: async () => buildIntrospection(),
-    });
+    const methods = buildActionMethods(client, async () =>
+      buildIntrospection()
+    );
 
     await methods.actionMutation(
       'createUser',
@@ -218,10 +214,9 @@ describe('buildActionMethods', () => {
 
   it('drops undefined variables and only sends the args the action declares', async () => {
     const { client, calls } = makeClient();
-    const methods = buildActionMethods({
-      client,
-      getIntrospection: async () => buildIntrospection(),
-    });
+    const methods = buildActionMethods(client, async () =>
+      buildIntrospection()
+    );
 
     await methods.actionMutation('createUser', {
       email: 'a@b.com',
@@ -229,54 +224,28 @@ describe('buildActionMethods', () => {
       bogus: 'ignored',
     });
 
-    expect(calls[0].variables).toEqual({ email: 'a@b.com', bogus: 'ignored' });
-    // bogus is not a declared arg, so it does not appear in the operation
+    // Only declared args that have a defined value are sent.
+    expect(calls[0].variables).toEqual({ email: 'a@b.com' });
     expect(calls[0].doc).not.toContain('bogus');
     expect(calls[0].doc).not.toContain('$name');
   });
 
-  it('throws when a required argument is missing', async () => {
-    const { client } = makeClient();
-    const methods = buildActionMethods({
-      client,
-      getIntrospection: async () => buildIntrospection(),
-    });
-
-    await expect(methods.actionMutation('createUser', {})).rejects.toThrow(
-      /missing required argument/i
-    );
-  });
-
   it('throws when the action is not in the schema', async () => {
     const { client } = makeClient();
-    const methods = buildActionMethods({
-      client,
-      getIntrospection: async () => buildIntrospection(),
-    });
+    const methods = buildActionMethods(client, async () =>
+      buildIntrospection()
+    );
 
     await expect(
       methods.actionMutation('nonExistentAction', {})
-    ).rejects.toThrow(/was not found/);
-  });
-
-  it('throws a clear error when introspection is disabled', async () => {
-    const { client } = makeClient();
-    const methods = buildActionMethods({
-      client,
-      getIntrospection: () => undefined,
-    });
-
-    await expect(methods.actionMutation('createUser', {})).rejects.toThrow(
-      /introspection is disabled/i
-    );
+    ).rejects.toThrow(/not found/);
   });
 
   it('looks up actionQuery on the Query root and defaults fetchPolicy to network-only', async () => {
     const { client, calls } = makeClient();
-    const methods = buildActionMethods({
-      client,
-      getIntrospection: async () => buildIntrospection(),
-    });
+    const methods = buildActionMethods(client, async () =>
+      buildIntrospection()
+    );
 
     await methods.actionQuery('searchUsers', { query: 'alice' });
 
@@ -288,10 +257,9 @@ describe('buildActionMethods', () => {
 
   it('respects a caller-provided fetchPolicy on actionQuery', async () => {
     const { client, calls } = makeClient();
-    const methods = buildActionMethods({
-      client,
-      getIntrospection: async () => buildIntrospection(),
-    });
+    const methods = buildActionMethods(client, async () =>
+      buildIntrospection()
+    );
 
     await methods.actionQuery(
       'searchUsers',
@@ -304,10 +272,9 @@ describe('buildActionMethods', () => {
 
   it('prints list/non-null nested arg types correctly', async () => {
     const { client, calls } = makeClient();
-    const methods = buildActionMethods({
-      client,
-      getIntrospection: async () => buildIntrospection(),
-    });
+    const methods = buildActionMethods(client, async () =>
+      buildIntrospection()
+    );
 
     await methods.actionMutation('tagThings', { tags: ['a', 'b'] });
 
@@ -320,10 +287,9 @@ describe('buildActionMethods', () => {
       data: { createUser: { id: 7, email: 'a@b.com' } },
     })) as any;
 
-    const methods = buildActionMethods({
-      client,
-      getIntrospection: async () => buildIntrospection(),
-    });
+    const methods = buildActionMethods(client, async () =>
+      buildIntrospection()
+    );
 
     const result = await methods.actionMutation('createUser', {
       email: 'a@b.com',

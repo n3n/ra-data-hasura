@@ -1,11 +1,11 @@
 import {
-  IntrospectionField,
   IntrospectionObjectType,
   IntrospectionTypeRef,
   TypeKind,
   parse,
   DocumentNode,
 } from 'graphql';
+import getFinalType from '../helpers/getFinalType';
 import type { IntrospectionResult } from '../types';
 
 export type ActionFetchPolicy =
@@ -17,40 +17,22 @@ export type ActionFetchPolicy =
   | 'standby';
 
 export type ActionOptions = {
-  /**
-   * Custom selection set for the action's output. Only applies when the
-   * action returns an object/interface/union type.
-   *
-   * Pass a GraphQL selection set fragment, with or without surrounding braces:
-   *   `'{ id name email }'` or `'id name email'`
-   *
-   * If omitted, all scalar fields on the output type are selected.
-   */
   fields?: string;
-
-  /**
-   * Apollo Client fetchPolicy override. Defaults to `'network-only'` for
-   * `actionQuery` so action results are not served from the cache, and the
-   * Apollo client default for `actionMutation`.
-   */
   fetchPolicy?: ActionFetchPolicy;
 };
 
-export type ActionMutation = <TData = any, TVariables = Record<string, any>>(
+export type ActionMethod = <TData = any, TVariables = Record<string, any>>(
   name: string,
   variables?: TVariables,
   options?: ActionOptions
 ) => Promise<TData>;
 
-export type ActionQuery = <TData = any, TVariables = Record<string, any>>(
-  name: string,
-  variables?: TVariables,
-  options?: ActionOptions
-) => Promise<TData>;
+export type ActionMutation = ActionMethod;
+export type ActionQuery = ActionMethod;
 
 export type ActionMethods = {
-  actionMutation: ActionMutation;
-  actionQuery: ActionQuery;
+  actionMutation: ActionMethod;
+  actionQuery: ActionMethod;
 };
 
 const printIntrospectionType = (type: IntrospectionTypeRef): string => {
@@ -63,50 +45,13 @@ const printIntrospectionType = (type: IntrospectionTypeRef): string => {
   return type.name;
 };
 
-type UnwrappedKind = Exclude<TypeKind, TypeKind.NON_NULL | TypeKind.LIST>;
-
-const unwrapTypeRef = (
-  type: IntrospectionTypeRef
-): { kind: UnwrappedKind; name: string } => {
-  if (type.kind === TypeKind.NON_NULL || type.kind === TypeKind.LIST) {
-    return unwrapTypeRef(type.ofType);
-  }
-  return {
-    kind: type.kind as UnwrappedKind,
-    name: (type as { name: string }).name,
-  };
-};
-
-const findRootField = (
-  introspectionResults: IntrospectionResult,
-  rootTypeName: string | null | undefined,
-  fieldName: string
-): IntrospectionField | undefined => {
-  if (!rootTypeName) return undefined;
-  const rootType = introspectionResults.types.find(
-    (t) => t.name === rootTypeName
-  );
-  if (!rootType || rootType.kind !== TypeKind.OBJECT) return undefined;
-  return (rootType as IntrospectionObjectType).fields.find(
-    (f) => f.name === fieldName
-  );
-};
-
-const wrapSelectionSet = (fieldsStr: string): string => {
-  const trimmed = fieldsStr.trim();
-  if (!trimmed) return '';
-  return trimmed.startsWith('{') ? trimmed : `{ ${trimmed} }`;
-};
-
-const buildScalarSelectionSet = (
-  outputType: IntrospectionObjectType
-): string => {
+const buildScalarSelectionSet = (outputType: IntrospectionObjectType) => {
   const scalars = outputType.fields.filter((f) => {
-    const finalType = unwrapTypeRef(f.type);
+    const kind = getFinalType(f.type).kind;
     return (
-      finalType.kind !== TypeKind.OBJECT &&
-      finalType.kind !== TypeKind.INTERFACE &&
-      finalType.kind !== TypeKind.UNION
+      kind !== TypeKind.OBJECT &&
+      kind !== TypeKind.INTERFACE &&
+      kind !== TypeKind.UNION
     );
   });
   if (scalars.length === 0) return '{ __typename }';
@@ -126,79 +71,42 @@ type ApolloLikeClient = {
   }) => Promise<{ data?: Record<string, unknown> | null }>;
 };
 
-export type BuildActionMethodsArgs = {
-  client: ApolloLikeClient;
-  getIntrospection: () => Promise<IntrospectionResult> | undefined;
-};
-
-export const buildActionMethods = ({
-  client,
-  getIntrospection,
-}: BuildActionMethodsArgs): ActionMethods => {
+export const buildActionMethods = (
+  client: ApolloLikeClient,
+  getIntrospection: () => Promise<IntrospectionResult>
+): ActionMethods => {
   const invoke = async (
     operationKeyword: 'mutation' | 'query',
     actionName: string,
-    rawVariables: Record<string, unknown> | undefined,
-    options: ActionOptions | undefined
-  ): Promise<unknown> => {
-    const introspectionPromise = getIntrospection();
-    if (!introspectionPromise) {
-      throw new Error(
-        'Cannot invoke Hasura action: introspection is disabled. ' +
-          'Enable introspection in buildHasuraProvider options to use actionMutation/actionQuery.'
-      );
-    }
-    const introspectionResults = await introspectionPromise;
-
+    variables: Record<string, unknown> = {},
+    options: ActionOptions = {}
+  ) => {
+    const introspection = await getIntrospection();
     const rootTypeName =
       operationKeyword === 'mutation'
-        ? introspectionResults.schema.mutationType?.name
-        : introspectionResults.schema.queryType?.name;
+        ? introspection.schema.mutationType?.name
+        : introspection.schema.queryType?.name;
 
-    const action = findRootField(
-      introspectionResults,
-      rootTypeName,
-      actionName
-    );
+    const rootType = introspection.types.find(
+      (t) => t.name === rootTypeName
+    ) as IntrospectionObjectType | undefined;
+    const action = rootType?.fields.find((f) => f.name === actionName);
     if (!action) {
       throw new Error(
-        `Hasura ${operationKeyword} "${actionName}" was not found on root type "${rootTypeName ?? 'unknown'}". ` +
-          'Make sure the action is defined and exposed by your Hasura schema.'
+        `Hasura ${operationKeyword} "${actionName}" not found on ${rootTypeName ?? 'root type'}.`
       );
     }
 
+    const usedArgs = action.args.filter((a) => variables[a.name] !== undefined);
     const cleanVariables: Record<string, unknown> = {};
-    if (rawVariables) {
-      for (const key of Object.keys(rawVariables)) {
-        if (rawVariables[key] !== undefined) {
-          cleanVariables[key] = rawVariables[key];
-        }
-      }
-    }
-
-    const usedArgs = action.args.filter((a) =>
-      Object.prototype.hasOwnProperty.call(cleanVariables, a.name)
-    );
-
-    const requiredMissing = action.args
-      .filter(
-        (a) =>
-          a.type.kind === TypeKind.NON_NULL &&
-          !Object.prototype.hasOwnProperty.call(cleanVariables, a.name)
-      )
-      .map((a) => a.name);
-    if (requiredMissing.length > 0) {
-      throw new Error(
-        `Hasura ${operationKeyword} "${actionName}" is missing required argument(s): ${requiredMissing.join(', ')}`
-      );
-    }
+    for (const a of usedArgs) cleanVariables[a.name] = variables[a.name];
 
     const varDefs = usedArgs
       .map((a) => `$${a.name}: ${printIntrospectionType(a.type)}`)
       .join(', ');
     const argList = usedArgs.map((a) => `${a.name}: $${a.name}`).join(', ');
 
-    const outputBase = unwrapTypeRef(action.type);
+    const outputBase = getFinalType(action.type);
     const isObjectOutput =
       outputBase.kind === TypeKind.OBJECT ||
       outputBase.kind === TypeKind.INTERFACE ||
@@ -206,10 +114,11 @@ export const buildActionMethods = ({
 
     let selectionSet = '';
     if (isObjectOutput) {
-      if (options?.fields) {
-        selectionSet = wrapSelectionSet(options.fields);
+      if (options.fields) {
+        const trimmed = options.fields.trim();
+        selectionSet = trimmed.startsWith('{') ? trimmed : `{ ${trimmed} }`;
       } else {
-        const objectType = introspectionResults.types.find(
+        const objectType = introspection.types.find(
           (t) => t.name === outputBase.name
         ) as IntrospectionObjectType | undefined;
         selectionSet = objectType
@@ -218,20 +127,17 @@ export const buildActionMethods = ({
       }
     }
 
-    const opName = `${operationKeyword === 'mutation' ? 'Action' : 'ActionQuery'}_${actionName}`;
-    const documentSource = `${operationKeyword} ${opName}${
-      varDefs ? `(${varDefs})` : ''
-    } { ${actionName}${argList ? `(${argList})` : ''}${
-      selectionSet ? ` ${selectionSet}` : ''
-    } }`;
-
-    const document = parse(documentSource);
+    const document = parse(
+      `${operationKeyword} ${actionName}${varDefs ? `(${varDefs})` : ''} { ` +
+        `${actionName}${argList ? `(${argList})` : ''}${selectionSet ? ` ${selectionSet}` : ''}` +
+        ` }`
+    );
 
     if (operationKeyword === 'mutation') {
       const result = await client.mutate({
         mutation: document,
         variables: cleanVariables,
-        ...(options?.fetchPolicy ? { fetchPolicy: options.fetchPolicy } : {}),
+        ...(options.fetchPolicy ? { fetchPolicy: options.fetchPolicy } : {}),
       });
       return result.data?.[actionName];
     }
@@ -239,25 +145,17 @@ export const buildActionMethods = ({
     const result = await client.query({
       query: document,
       variables: cleanVariables,
-      fetchPolicy: options?.fetchPolicy ?? 'network-only',
+      // network-only by default: action results are usually side-effectful
+      // or freshness-sensitive and shouldn't be served stale from the cache.
+      fetchPolicy: options.fetchPolicy ?? 'network-only',
     });
     return result.data?.[actionName];
   };
 
   return {
-    actionMutation: ((name, variables, options) =>
-      invoke(
-        'mutation',
-        name,
-        variables as Record<string, unknown> | undefined,
-        options
-      )) as ActionMutation,
-    actionQuery: ((name, variables, options) =>
-      invoke(
-        'query',
-        name,
-        variables as Record<string, unknown> | undefined,
-        options
-      )) as ActionQuery,
+    actionMutation: (name, variables, options) =>
+      invoke('mutation', name, variables as any, options) as any,
+    actionQuery: (name, variables, options) =>
+      invoke('query', name, variables as any, options) as any,
   };
 };
