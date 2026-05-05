@@ -1,5 +1,5 @@
 {
-  "name": "ra-data-hasura",
+  "name": "@aginix/ra-data-hasura",
   "version": "0.7.1",
   "description": "A data provider for connecting react-admin to a Hasura endpoint",
   "type": "module",

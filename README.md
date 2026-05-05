@@ -1,6 +1,12 @@
 # ra-data-hasura
 
-A GraphQL data provider for [react-admin v4](https://marmelab.com/react-admin) tailored to target [Hasura](https://hasura.io/) GraphQL endpoints. For React Admin v3 use v0.4.2 of this library. For React Admin v5 support, use >v0.7.0 of this library.
+A GraphQL data provider for [react-admin](https://marmelab.com/react-admin) tailored to target [Hasura](https://hasura.io/) GraphQL endpoints.
+
+| Library version | React Admin version |
+| --------------- | ------------------- |
+| `>= 0.7.0`      | v5                  |
+| `0.5.x – 0.6.x` | v4                  |
+| `<= 0.4.2`      | v3                  |
 
 - [ra-data-hasura](#ra-data-hasura)
   - [Benefits and Motivation](#benefits-and-motivation)
@@ -12,13 +18,20 @@ A GraphQL data provider for [react-admin v4](https://marmelab.com/react-admin) t
     - [Adding Authentication Headers](#adding-authentication-headers)
     - [Customize the introspection](#customize-the-introspection)
     - [Customize the Data Return](#customize-the-data-return)
+    - [Debug Mode](#debug-mode)
   - [Customizing queries](#customizing-queries)
     - [Example: extending a query to include related entities](#example-extending-a-query-to-include-related-entities)
     - [Example: write a completely custom query](#example-write-a-completely-custom-query)
-  - [Special Filter Feature](#special-filter-feature)
+  - [Special Filter Features](#special-filter-features)
+    - [Multi-field OR filtering](#multi-field-or-filtering)
     - [Nested filtering](#nested-filtering)
     - [Jsonb filtering](#jsonb-filtering)
-  - [Sorting lists by multiple columns](#sorting-lists-by-multiple-columns)
+    - [Raw Hasura query filter](#raw-hasura-query-filter)
+    - [Programmatic filters (customFilters)](#programmatic-filters-customfilters)
+  - [Sorting](#sorting)
+    - [Sorting by multiple columns](#sorting-by-multiple-columns)
+    - [Null handling in sort](#null-handling-in-sort)
+  - [Disabling pagination](#disabling-pagination)
   - [Contributing](#contributing)
   - [Credits](#credits)
 
@@ -31,21 +44,19 @@ Example applications demonstrating usage:
 
 This utility is built on top of [ra-data-graphql](https://github.com/vladimiregorov/react-admin/blob/master/packages/ra-data-graphql/README.md) and is a custom data provider for the current Hasura GraphQL API format.
 
-The existing ra-data-graphql-simple provider, requires that your GraphQL endpoint implement a specific grammar for the objects and methods exposed, which is different with Hasura because the exposed objects and methods are generated differently.
+The existing ra-data-graphql-simple provider requires that your GraphQL endpoint implement a specific grammar for the objects and methods exposed, which is different with Hasura because the exposed objects and methods are generated differently.
 
 This utility auto generates valid GraphQL queries based on the properties exposed by the Hasura API such as `object_bool_exp` and `object_set_input`.
 
 ## Installation
 
-Install with:
-
 ```sh
-npm install --save graphql ra-data-hasura
+npm install --save graphql @aginix/ra-data-hasura
 ```
 
 ## Usage
 
-The `ra-data-hasura` package exposes a single function with the following signature:
+The `@aginix/ra-data-hasura` package exposes a single default function with the following signature:
 
 ```js
 buildHasuraProvider(
@@ -53,7 +64,7 @@ buildHasuraProvider(
   buildGqlQueryOverrides?: Object,
   customBuildVariables?: Function,
   customGetResponseParser?: Function,
-) => Function
+) => Promise<DataProvider>
 ```
 
 See the [Options](#options) and [Customizing queries](#customizing-queries) sections below for more details on these arguments.
@@ -61,9 +72,8 @@ See the [Options](#options) and [Customizing queries](#customizing-queries) sect
 This function acts as a constructor for a `dataProvider` based on a Hasura GraphQL endpoint. When executed, this function calls the endpoint, running an [introspection](http://graphql.org/learn/introspection/) query to learn about the specific data models exposed by your Hasura endpoint. It uses the result of this query (the GraphQL schema) to automatically configure the `dataProvider` accordingly.
 
 ```jsx
-// Initialize the dataProvider before rendering react-admin resources.
 import React, { useState, useEffect } from 'react';
-import buildHasuraProvider from 'ra-data-hasura';
+import buildHasuraProvider from '@aginix/ra-data-hasura';
 import { Admin, Resource } from 'react-admin';
 
 import { PostCreate, PostEdit, PostList } from './posts';
@@ -100,7 +110,7 @@ export default App;
 
 ## How It Works
 
-The data provider converts React Admin queries into the form expected by Hasura's GraphQL API. For example, a React Admin `GET_LIST` request for a person resource with the parameters :
+The data provider converts React Admin queries into the form expected by Hasura's GraphQL API. For example, a React Admin `GET_LIST` request for a person resource with the parameters:
 
 ```json
 {
@@ -112,16 +122,31 @@ The data provider converts React Admin queries into the form expected by Hasura'
 }
 ```
 
-will generate the following GraphQL request for Hasura :
+will generate the following GraphQL request for Hasura:
 
-```
-query person($limit: Int, $offset: Int, $order_by: [person_order_by!]!, $where: person_bool_exp) {
-  items: person(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
+```graphql
+query person(
+  $limit: Int
+  $offset: Int
+  $order_by: [person_order_by!]!
+  $where: person_bool_exp
+) {
+  items: person(
+    limit: $limit
+    offset: $offset
+    order_by: $order_by
+    where: $where
+  ) {
     id
     name
     address_id
   }
-  total: person_aggregate(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
+  total: person_aggregate(
+    limit: $limit
+    offset: $offset
+    order_by: $order_by
+    where: $where
+  ) {
     aggregate {
       count
     }
@@ -129,27 +154,24 @@ query person($limit: Int, $offset: Int, $order_by: [person_order_by!]!, $where: 
 }
 ```
 
-With the following variables to be passed alongside the query:
+With the following variables:
 
-```
+```json
 {
-  limit: 5,
-  offset: 0,
-  order_by: { name: 'desc' },
-  where: {
-    _and: [
+  "limit": 5,
+  "offset": 0,
+  "order_by": { "name": "desc" },
+  "where": {
+    "_and": [
       {
-        id: {
-          _in: [101, 102]
-        }
+        "id": { "_in": [101, 102] }
       }
     ]
   }
 }
-
 ```
 
-React Admin sort and filter objects will be converted appropriately, for example sorting with dot notation:
+React Admin sort and filter objects will be converted appropriately. For example, sorting with dot notation:
 
 ```jsx
 export const PostList = (props) => (
@@ -159,17 +181,13 @@ export const PostList = (props) => (
 );
 ```
 
-will generate the following GraphQL query variables:
+will generate:
 
-```js
-{
-  limit: 25,
-  offset: 0,
-  order_by: { user: { email: 'desc' } }
-}
+```json
+{ "order_by": { "user": { "email": "desc" } } }
 ```
 
-and
+and `distinct_on`:
 
 ```jsx
 export const AddressList = () => (
@@ -182,14 +200,11 @@ export const AddressList = () => (
 );
 ```
 
-will generate the following GraphQL query variables:
+will generate:
 
 ```json
 {
-  // ...
-  "order_by": {
-    "city": "desc"
-  },
+  "order_by": { "city": "desc" },
   "distinct_on": "city"
 }
 ```
@@ -203,7 +218,7 @@ Keep in mind that `distinct_on` must be used in conjunction with `order_by`, oth
 You can either supply just the client options:
 
 ```js
-buildGraphQLProvider({
+buildHasuraProvider({
   clientOptions: {
     uri: 'http://localhost:8080/v1/graphql',
     ...otherApolloOptions,
@@ -214,12 +229,12 @@ buildGraphQLProvider({
 or supply the client instance directly:
 
 ```js
-buildGraphQLProvider({ client: myClient });
+buildHasuraProvider({ client: myClient });
 ```
 
 ### Adding Authentication Headers
 
-To send authentication headers, you'll need to supply the client instance directly with headers defined:
+To send authentication headers, supply the client instance directly with headers defined:
 
 ```js
 import { ApolloClient, InMemoryCache } from '@apollo/client';
@@ -292,20 +307,20 @@ const introspectionOptions = {
   include: (type) => ['Post', 'Comment'].includes(type.name),
 };
 
-// Including types with a function
+// Excluding types with a function
 const introspectionOptions = {
   exclude: (type) => !['Post', 'Comment'].includes(type.name),
 };
 ```
 
-**Note**: `exclude` and `include` are mutually exclusives and `include` will take precendance.
+**Note**: `exclude` and `include` are mutually exclusive and `include` will take precedence.
 
 **Note**: When using functions, the `type` argument will be a type returned by the introspection query. Refer to the [introspection](http://graphql.org/learn/introspection/) documentation for more information.
 
-Pass the introspection options to the `buildApolloProvider` function:
+Pass the introspection options to the `buildHasuraProvider` function:
 
 ```js
-buildApolloProvider({ introspection: introspectionOptions });
+buildHasuraProvider({ introspection: introspectionOptions });
 ```
 
 ### Customize the Data Return
@@ -340,10 +355,7 @@ React.useEffect(() => {
           );
         }
 
-        return {
-          data: data as any[],
-          ...metadata,
-        };
+        return { data: data as any[], ...metadata };
       },
       getOne: (resource, params) => dataProviderHasura.getOne(resource, params),
       getMany: (resource, params) =>
@@ -364,6 +376,24 @@ React.useEffect(() => {
 }, []);
 ```
 
+### Debug Mode
+
+Pass `debug: true` to log every request to the browser console. Each call is rendered as a collapsible group with its `fetchType`, params, the printed GraphQL query, variables, response (or error), and duration. Requests are tagged with a sequential id (`#1`, `#2`, …) so request and response groups stay correlated even when calls interleave. Schema introspection is also logged the first time it runs.
+
+```ts
+const dataProvider = await buildHasuraProvider({
+  client: apolloClient,
+  debug: true,
+});
+```
+
+> [!WARNING]
+> Debug mode prints **everything sent to and received from Hasura**, including mutation variables (e.g. password hashes, tokens, or any other sensitive column values). Only enable it in development. Gate it behind an environment check before shipping:
+>
+> ```ts
+> debug: process.env.NODE_ENV === 'development',
+> ```
+
 ## Customizing queries
 
 Queries built by this data provider are made up of 3 parts:
@@ -372,7 +402,7 @@ Queries built by this data provider are made up of 3 parts:
 2. The variables defining the query constraints like `where, order_by, limit, offset`
 3. The response format e.g. `{ data: {...}, total: 100 }`
 
-Each of these can be customized - functions overriding numbers 2 and 3 can be passed to directly to `buildDataProvider` as shown in [Usage](#usage), whilst number 1 can be customized in parts using the `buildGqlQueryOverrides` object argument:
+Each of these can be customized — functions overriding numbers 2 and 3 can be passed directly to `buildHasuraProvider` as shown in [Usage](#usage), whilst number 1 can be customized in parts using the `buildGqlQueryOverrides` object argument:
 
 ```js
 {
@@ -383,7 +413,7 @@ Each of these can be customized - functions overriding numbers 2 and 3 can be pa
 }
 ```
 
-A likely scenario is that you want to override only the `buildFields` part so that you can customize your GraphQL queries - requesting fewer fields, more fields, nested fields etc.
+A likely scenario is that you want to override only the `buildFields` part so that you can customize your GraphQL queries — requesting fewer fields, more fields, nested fields etc.
 
 This can be easily done, and importantly can be done using `gql` template literal tags, as shown in the examples below. Take a look at this [demo application](https://github.com/cpv123/react-admin-hasura-queries) to see it in action.
 
@@ -392,19 +422,14 @@ This can be easily done, and importantly can be done using `gql` template litera
 By default, the data provider will generate queries that include all fields on a resource, but without any relationships to nested entities. If you would like to keep these base fields but extend the query to also include related entities, then you can write a custom `buildFields` like this:
 
 ```ts
-import buildDataProvider, { buildFields } from 'ra-data-hasura';
-import type { BuildFields } from 'ra-data-hasura';
+import buildDataProvider, { buildFields } from '@aginix/ra-data-hasura';
+import type { BuildFields } from '@aginix/ra-data-hasura';
 import gql from 'graphql-tag';
 
-/**
- * Extracts just the fields from a GraphQL AST.
- * @param {GraphQL AST} queryAst
- */
 const extractFieldsFromQuery = (queryAst) => {
   return queryAst.definitions[0].selectionSet.selections;
 };
 
-// Define the additional fields that we want.
 const EXTENDED_GET_ONE_USER = gql`
   {
     todos_aggregate {
@@ -418,15 +443,12 @@ const EXTENDED_GET_ONE_USER = gql`
 const customBuildFields: BuildFields = (type, fetchType) => {
   const resourceName = type.name;
 
-  // First take the default fields (all, but no related or nested).
   const defaultFields = buildFields(type, fetchType);
 
   if (resourceName === 'users' && fetchType === 'GET_ONE') {
     const relatedEntities = extractFieldsFromQuery(EXTENDED_GET_ONE_USER);
     defaultFields.push(...relatedEntities);
   }
-
-  // Extend other queries for other resources/fetchTypes here...
 
   return defaultFields;
 };
@@ -440,13 +462,9 @@ If you want full control over the GraphQL query, then you can define the entire 
 
 ```ts
 import gql from 'graphql-tag';
-import buildDataProvider, { buildFields } from 'ra-data-hasura';
-import type { BuildFields } from 'ra-data-hasura';
+import buildDataProvider, { buildFields } from '@aginix/ra-data-hasura';
+import type { BuildFields } from '@aginix/ra-data-hasura';
 
-/**
- * Extracts just the fields from a GraphQL AST.
- * @param {GraphQL AST} queryAst
- */
 const extractFieldsFromQuery = (queryAst) => {
   return queryAst.definitions[0].selectionSet.selections;
 };
@@ -476,7 +494,6 @@ const customBuildFields: BuildFields = (type, fetchType) => {
     return extractFieldsFromQuery(GET_ONE_USER);
   }
 
-  // No custom query defined, so use the default query fields (all, but no related/nested).
   return buildFields(type, fetchType);
 };
 
@@ -485,9 +502,19 @@ buildDataProvider(options, { buildFields: customBuildFields });
 
 Note that when using this approach in particular, it is possible that you will come across [this issue](https://github.com/cpv123/react-admin-hasura-queries#troubleshooting).
 
-## Special Filter Feature
+## Special Filter Features
 
-This adapter allows filtering several columns at a time with using specific comparators, e.g. `ilike`, `like`, `eq`, etc.
+This adapter provides a rich filter syntax using special key patterns. Keys are parsed using:
+
+- `@` as operator separator (e.g. `field@_ilike`)
+- `#` as nested field separator (e.g. `relation#field`)
+- `,` to create OR conditions across multiple fields
+
+The default comparator is `_ilike` for strings (automatically wraps value in `%value%`) and `_eq` for other types.
+
+### Multi-field OR filtering
+
+Comma-separate multiple field paths in a single `source` to produce an `_or` condition:
 
 ```tsx
 <Filter {...props}>
@@ -499,47 +526,23 @@ This adapter allows filtering several columns at a time with using specific comp
 </Filter>
 ```
 
-It will generate the following filter payload
+Generates:
 
 ```json
 {
-  "variables": {
-    "where": {
-      "_and": [],
-      "_or": [
-        {
-          "email": {
-            "_ilike": "%edu%"
-          }
-        },
-        {
-          "first_name": {
-            "_eq": "edu"
-          }
-        },
-        {
-          "last_name": {
-            "_like": "%edu%"
-          }
-        }
-      ]
-    },
-    "limit": 10,
-    "offset": 0,
-    "order_by": {
-      "id": "asc"
-    }
+  "where": {
+    "_or": [
+      { "email": { "_ilike": "%edu%" } },
+      { "first_name": { "_eq": "edu" } },
+      { "last_name": { "_like": "%edu%" } }
+    ]
   }
 }
 ```
 
-The adapter assigns default comparator depends on the data type if it is not provided.
-For string data types, it assumes as text search and uses `ilike` otherwise it uses `eq`.
-For string data types that uses `like` or `ilike` it automatically transform the filter `value` as `%value%`.
-
 ### Nested filtering
 
-Nested filtering is supported using # as a field separator.
+Use `#` as a field separator to filter on related object fields:
 
 ```tsx
 <TextInput
@@ -549,51 +552,29 @@ Nested filtering is supported using # as a field separator.
 />
 ```
 
-Will produce the following payload:
+Generates:
 
 ```json
 {
   "where": {
-    "_and": [],
     "_or": [
-      {
-        "indication": {
-          "name": {
-            "_ilike": "%TEXT%"
-          }
-        }
-      },
-      {
-        "drug": {
-          "name": {
-            "_ilike": "%TEXT%"
-          }
-        }
-      },
-      {
-        "sponsor": {
-          "name": {
-            "_ilike": "%TEXT%"
-          }
-        }
-      }
+      { "indication": { "name": { "_ilike": "%TEXT%" } } },
+      { "drug": { "name": { "_ilike": "%TEXT%" } } },
+      { "sponsor": { "name": { "_ilike": "%TEXT%" } } }
     ]
-  },
-  "limit": 10,
-  "offset": 0,
-  "order_by": {
-    "id": "asc"
   }
 }
 ```
 
-## Jsonb filtering
+### Jsonb filtering
+
+Use `@_contains` with a `#`-separated path to filter on JSONB fields:
 
 ```jsx
 <TextField label="Theme Color" source="users#preferences@_contains@ux#theme" />
 ```
 
-Will produce payload:
+Generates:
 
 ```json
 {
@@ -602,67 +583,88 @@ Will produce payload:
       {
         "users": {
           "preferences": {
-            "_contains": {
-              "ux": {
-                "theme": "%TEXT"
-              }
-            }
+            "_contains": { "ux": { "theme": "%TEXT" } }
           }
         }
       }
     ]
-  },
-  "limit": 10,
-  "offset": 0,
-  "order_by": {
-    "id": "asc"
   }
 }
 ```
 
-Fetch data matching a jsonb `_contains` operation
+Dynamic JSONB filtering using a related record field:
 
 ```jsx
-<FunctionField render={(rec: {processor = "apple" | "google" | "stripe", ...})
-  <ReferenceManyField
-    reference="account_plans"
-    target="payments#details@_contains@processor#${rec.processor}_id"
-    source="payment_processor"
-  >
-    <Datagrid>
-    ...
-    </Datagrid>
-  </ReferenceManyField>
-} />
+<FunctionField
+  render={(rec) => (
+    <ReferenceManyField
+      reference="account_plans"
+      target={`payments#details@_contains@processor#${rec.processor}_id`}
+      source="payment_processor"
+    >
+      <Datagrid>...</Datagrid>
+    </ReferenceManyField>
+  )}
+/>
 ```
 
-Will produce payload:
+### Raw Hasura query filter
 
-```json
-{
-  "where": {
-    "_and": [
-      {
-        "payments": {
-          "details": {
-            "_contains": {
-              "processor": {
-                "%{rec.processor}_id": "%{rec.id}"
-              }
-            }
-          }
-        }
-      }
-    ]
-  }
-}
+When the standard filter syntax cannot express your condition, you can pass a raw Hasura `where` object directly using the `hasura-raw-query` format. This bypasses all filter processing and injects the value as-is into the `where` clause.
+
+```tsx
+// In a custom List component or hook:
+const filters = {
+  status: {
+    format: 'hasura-raw-query',
+    value: { _in: ['active', 'pending'] },
+  },
+};
+
+<List filter={filters}>...</List>;
 ```
 
-## Sorting lists by multiple columns
+This is especially useful when you need to express conditions that the `@` / `#` syntax does not cover, such as `_nin`, `_similar`, or nested `_and`/`_or` logic:
 
-Hasura support [sorting by multiple fields](https://hasura.io/docs/latest/graphql/core/databases/postgres/queries/sorting.html#sorting-by-multiple-fields) but React Admin itself doesn't allow the `List` component to receive an array as the `sort` prop. So to achieve sorting by multiple fields, separate the field and order values using a comma.
+```ts
+const filters = {
+  metadata: {
+    format: 'hasura-raw-query',
+    value: {
+      _or: [{ tags: { _contains: 'featured' } }, { priority: { _gte: 5 } }],
+    },
+  },
+};
+```
 
-For example, a list like
+The key (`status`, `metadata`, etc.) is still used as the field path. To inject a condition at the top level of `_and`, use a key that matches the desired root field.
+
+### Programmatic filters (customFilters)
+
+You can pass additional pre-built filter objects via `customFilters` on the params object. These are merged directly into the `_and` array alongside the standard `filter` object:
+
+```tsx
+import { useListController } from 'react-admin';
+
+const MyList = () => {
+  const controllerProps = useListController({
+    resource: 'posts',
+    // customFilters are appended to the _and clause
+    filter: { status: 'published' },
+    // @ts-ignore — customFilters is not part of the official RA type
+    customFilters: [{ author_id: { _eq: currentUserId } }],
+  });
+  // ...
+};
+```
+
+`customFilters` is an array of raw Hasura filter objects. Each object is added as an additional `_and` condition alongside any filters derived from the `filter` param.
+
+## Sorting
+
+### Sorting by multiple columns
+
+Hasura supports [sorting by multiple fields](https://hasura.io/docs/latest/graphql/core/databases/postgres/queries/sorting.html#sorting-by-multiple-fields). Since React Admin's `List` `sort` prop does not accept arrays, separate multiple fields and orders with commas:
 
 ```jsx
 const TodoList = (props) => (
@@ -672,31 +674,59 @@ const TodoList = (props) => (
 );
 ```
 
-will generate a query with an `order_by` variable like
+generates:
 
-```
-order_by: [{ title: "asc" }, { is_completed: "desc" }]
+```json
+{ "order_by": [{ "title": "asc" }, { "is_completed": "desc" }] }
 ```
 
-Fields may contain dots to specify sorting by nested object properties similarly to React Admin `source` property.
+Fields may contain dots to sort by nested object properties (e.g. `user.email`).
+
+### Null handling in sort
+
+Append `@nulls_last` or `@nulls_first` to a sort field to control how `NULL` values are ordered:
+
+```jsx
+<List sort={{ field: 'published_at@nulls_last', order: 'DESC' }}>...</List>
+```
+
+generates:
+
+```json
+{ "order_by": { "published_at": "desc_nulls_last" } }
+```
+
+Supported modifiers: `nulls_last`, `nulls_first`.
+
+## Disabling pagination
+
+Set `perPage` to `-1` to fetch all records without a `limit` or `offset` being sent to Hasura:
+
+```jsx
+<List pagination={false} perPage={-1}>
+  ...
+</List>
+```
+
+Use with caution on large tables.
 
 ## Contributing
 
-To modify, extend and test this package locally,
+To modify, extend and test this package locally:
 
-```
-$ cd ra-data-hasura
-$ npm link
-```
-
-Now use this local package in your react app for testing
-
-```
-$ cd my-react-app
-$ npm link ra-data-hasura
+```sh
+cd ra-data-hasura
+npm link
 ```
 
-Build the library by running `npm run build` and it will generate the transpiled version of the library under `lib` folder.
+Now use this local package in your React app for testing:
+
+```sh
+cd my-react-app
+npm link ra-data-hasura
+```
+
+Build the library by running `npm run build` — output is generated in the `dist` folder.
 
 ## Credits
 

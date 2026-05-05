@@ -36,6 +36,7 @@ import {
 } from '../buildGqlQuery/buildArgs';
 import { buildFields, BuildFields } from '../buildGqlQuery/buildFields';
 import { buildQueryFactory } from '../buildQuery';
+import { createDebugger } from '../debug';
 import type { IntrospectionResult } from '../types';
 
 const defaultOptions: Partial<Options> = {
@@ -62,6 +63,14 @@ const buildGqlQueryDefaults = {
   aggregateFieldName: (resourceName: string) => `${resourceName}_aggregate`,
 };
 
+export type CustomDataProviderOptions = Partial<Options> & {
+  /**
+   * Logs every request to the console (query, variables, response, errors,
+   * duration). Intended for development; do not enable in production.
+   */
+  debug?: boolean;
+};
+
 export type HasuraDataProvider = ReturnType<typeof buildDataProvider> & {
   getAggregate: <F extends AggregateFields>(
     resource: string,
@@ -70,7 +79,7 @@ export type HasuraDataProvider = ReturnType<typeof buildDataProvider> & {
 };
 
 export type BuildCustomDataProvider = (
-  options: Partial<Options>,
+  options: CustomDataProviderOptions,
   buildGqlQueryOverrides?: {
     buildFields?: BuildFields;
     buildMetaArgs?: BuildMetaArgs;
@@ -88,6 +97,8 @@ export const buildCustomDataProvider: BuildCustomDataProvider = (
   customBuildVariables = defaultBuildVariables,
   customGetResponseParser = defaultGetResponseParser
 ) => {
+  const { debug = false, ...restOptions } = options;
+
   const buildGqlQueryOptions = {
     ...buildGqlQueryDefaults,
     ...buildGqlQueryOverrides,
@@ -109,14 +120,19 @@ export const buildCustomDataProvider: BuildCustomDataProvider = (
     customGetResponseParser
   );
 
+  const dbg = debug ? createDebugger() : null;
+  const finalBuildQuery = dbg ? dbg.wrapBuildQuery(buildQuery) : buildQuery;
+
   const provider = buildDataProvider(
-    merge({}, defaultOptions, { buildQuery }, options)
+    merge({}, defaultOptions, restOptions, { buildQuery: finalBuildQuery })
   );
 
+  const wrappedProvider = dbg ? dbg.wrapDataProvider(provider) : provider;
+
   return {
-    ...provider,
+    ...wrappedProvider,
     getAggregate: makeGetAggregate(
-      options.client ?? null,
+      restOptions.client ?? null,
       buildGqlQueryOptions.aggregateFieldName
     ),
   };
