@@ -18,6 +18,7 @@ A GraphQL data provider for [react-admin](https://marmelab.com/react-admin) tail
     - [Adding Authentication Headers](#adding-authentication-headers)
     - [Customize the introspection](#customize-the-introspection)
     - [Customize the Data Return](#customize-the-data-return)
+    - [Debug Mode](#debug-mode)
   - [Customizing queries](#customizing-queries)
     - [Example: extending a query to include related entities](#example-extending-a-query-to-include-related-entities)
     - [Example: write a completely custom query](#example-write-a-completely-custom-query)
@@ -374,6 +375,24 @@ React.useEffect(() => {
   buildDataProvider();
 }, []);
 ```
+
+### Debug Mode
+
+Pass `debug: true` to log every request to the browser console. Each call is rendered as a collapsible group with its `fetchType`, params, the printed GraphQL query, variables, response (or error), and duration. Requests are tagged with a sequential id (`#1`, `#2`, …) so request and response groups stay correlated even when calls interleave. Schema introspection is also logged the first time it runs.
+
+```ts
+const dataProvider = await buildHasuraProvider({
+  client: apolloClient,
+  debug: true,
+});
+```
+
+> [!WARNING]
+> Debug mode prints **everything sent to and received from Hasura**, including mutation variables (e.g. password hashes, tokens, or any other sensitive column values). Only enable it in development. Gate it behind an environment check before shipping:
+>
+> ```ts
+> debug: process.env.NODE_ENV === 'development',
+> ```
 
 ## Customizing queries
 
