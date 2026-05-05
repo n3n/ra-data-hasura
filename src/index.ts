@@ -35,7 +35,7 @@ export type {
   CustomDataProviderOptions,
 } from './customDataProvider';
 
-export { buildActionMethods } from './actions';
+export { buildActionMethods, fetchIntrospectionViaClient } from './actions';
 export type {
   ActionMethods,
   ActionMutation,

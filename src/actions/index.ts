@@ -2,6 +2,7 @@ import {
   IntrospectionObjectType,
   IntrospectionTypeRef,
   TypeKind,
+  getIntrospectionQuery,
   parse,
   DocumentNode,
 } from 'graphql';
@@ -58,17 +59,42 @@ const buildScalarSelectionSet = (outputType: IntrospectionObjectType) => {
   return `{ ${scalars.map((f) => f.name).join(' ')} }`;
 };
 
+// Loose enough to accept both the real ApolloClient and lightweight test mocks.
 type ApolloLikeClient = {
   mutate: (opts: {
     mutation: DocumentNode;
-    variables?: Record<string, unknown>;
-    fetchPolicy?: ActionFetchPolicy;
-  }) => Promise<{ data?: Record<string, unknown> | null }>;
+    variables?: any;
+    fetchPolicy?: any;
+  }) => Promise<{ data?: any }>;
   query: (opts: {
     query: DocumentNode;
-    variables?: Record<string, unknown>;
-    fetchPolicy?: ActionFetchPolicy;
-  }) => Promise<{ data?: Record<string, unknown> | null }>;
+    variables?: any;
+    fetchPolicy?: any;
+  }) => Promise<{ data?: any }>;
+};
+
+const INTROSPECTION_QUERY = parse(getIntrospectionQuery());
+
+export const fetchIntrospectionViaClient = async (
+  client: ApolloLikeClient
+): Promise<IntrospectionResult> => {
+  const result = await client.query({
+    query: INTROSPECTION_QUERY,
+    fetchPolicy: 'no-cache',
+  });
+  const schema = (result.data as { __schema?: IntrospectionResult['schema'] })
+    ?.__schema;
+  if (!schema) {
+    throw new Error(
+      'Introspection query did not return a __schema. The endpoint may have introspection disabled.'
+    );
+  }
+  return {
+    schema,
+    types: schema.types as IntrospectionResult['types'],
+    queries: [],
+    resources: [],
+  };
 };
 
 export const buildActionMethods = (
@@ -94,6 +120,17 @@ export const buildActionMethods = (
     if (!action) {
       throw new Error(
         `Hasura ${operationKeyword} "${actionName}" not found on ${rootTypeName ?? 'root type'}.`
+      );
+    }
+
+    const argNames = new Set(action.args.map((a) => a.name));
+    const unknownVars = Object.keys(variables).filter(
+      (k) => variables[k] !== undefined && !argNames.has(k)
+    );
+    if (unknownVars.length > 0) {
+      throw new Error(
+        `Hasura ${operationKeyword} "${actionName}" does not declare argument(s) ` +
+          `[${unknownVars.join(', ')}]. Declared args: [${[...argNames].join(', ') || '(none)'}].`
       );
     }
 

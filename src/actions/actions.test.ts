@@ -1,5 +1,5 @@
 import { print } from 'graphql';
-import { buildActionMethods } from './index';
+import { buildActionMethods, fetchIntrospectionViaClient } from './index';
 import type { IntrospectionResult } from '../types';
 
 const namedType = (name: string) => ({ kind: 'NAMED', name }) as any;
@@ -221,13 +221,25 @@ describe('buildActionMethods', () => {
     await methods.actionMutation('createUser', {
       email: 'a@b.com',
       name: undefined,
-      bogus: 'ignored',
     });
 
     // Only declared args that have a defined value are sent.
     expect(calls[0].variables).toEqual({ email: 'a@b.com' });
-    expect(calls[0].doc).not.toContain('bogus');
     expect(calls[0].doc).not.toContain('$name');
+  });
+
+  it('throws when caller passes a variable name the action does not declare', async () => {
+    const { client } = makeClient();
+    const methods = buildActionMethods(client, async () =>
+      buildIntrospection()
+    );
+
+    await expect(
+      methods.actionMutation('createUser', {
+        email: 'a@b.com',
+        bogus: 'oops',
+      })
+    ).rejects.toThrow(/does not declare argument\(s\) \[bogus\]/);
   });
 
   it('throws when the action is not in the schema', async () => {
@@ -296,5 +308,39 @@ describe('buildActionMethods', () => {
     });
 
     expect(result).toEqual({ id: 7, email: 'a@b.com' });
+  });
+});
+
+describe('fetchIntrospectionViaClient', () => {
+  it('runs the introspection query and returns an IntrospectionResult', async () => {
+    const fakeSchema = {
+      mutationType: { name: 'mutation_root' },
+      queryType: { name: 'query_root' },
+      subscriptionType: null,
+      types: [{ kind: 'OBJECT', name: 'foo', fields: [] }],
+      directives: [],
+    };
+    const client = {
+      mutate: jest.fn(),
+      query: jest.fn(async () => ({ data: { __schema: fakeSchema } })),
+    };
+
+    const result = await fetchIntrospectionViaClient(client);
+
+    expect(result.schema).toBe(fakeSchema);
+    expect(result.types).toBe(fakeSchema.types);
+    expect(client.query).toHaveBeenCalledWith(
+      expect.objectContaining({ fetchPolicy: 'no-cache' })
+    );
+  });
+
+  it('throws if the response has no __schema', async () => {
+    const client = {
+      mutate: jest.fn(),
+      query: jest.fn(async () => ({ data: {} })),
+    };
+    await expect(fetchIntrospectionViaClient(client)).rejects.toThrow(
+      /__schema/
+    );
   });
 });
