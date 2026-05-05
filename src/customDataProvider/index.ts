@@ -1,5 +1,11 @@
 import merge from 'lodash/merge';
 import buildDataProvider, { Options } from 'ra-data-graphql';
+import { makeGetAggregate } from '../getAggregate';
+import type {
+  AggregateFields,
+  GetAggregateParams,
+  AggregateResultOf,
+} from '../getAggregate/types';
 import {
   GET_ONE,
   GET_LIST,
@@ -56,6 +62,13 @@ const buildGqlQueryDefaults = {
   aggregateFieldName: (resourceName: string) => `${resourceName}_aggregate`,
 };
 
+export type HasuraDataProvider = ReturnType<typeof buildDataProvider> & {
+  getAggregate: <F extends AggregateFields>(
+    resource: string,
+    params: GetAggregateParams<F>
+  ) => Promise<{ data: AggregateResultOf<F> }>;
+};
+
 export type BuildCustomDataProvider = (
   options: Partial<Options>,
   buildGqlQueryOverrides?: {
@@ -67,7 +80,7 @@ export type BuildCustomDataProvider = (
   },
   customBuildVariables?: BuildVariables,
   customGetResponseParser?: GetResponseParser
-) => ReturnType<typeof buildDataProvider>;
+) => HasuraDataProvider;
 
 export const buildCustomDataProvider: BuildCustomDataProvider = (
   options = {},
@@ -96,5 +109,15 @@ export const buildCustomDataProvider: BuildCustomDataProvider = (
     customGetResponseParser
   );
 
-  return buildDataProvider(merge({}, defaultOptions, { buildQuery }, options));
+  const provider = buildDataProvider(
+    merge({}, defaultOptions, { buildQuery }, options)
+  );
+
+  return {
+    ...provider,
+    getAggregate: makeGetAggregate(
+      options.client ?? null,
+      buildGqlQueryOptions.aggregateFieldName
+    ),
+  };
 };
