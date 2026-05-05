@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Admin, Resource, DataProvider } from 'react-admin';
-import buildHasuraProvider from 'ra-data-hasura';
+import buildHasuraProvider from '@aginix/ra-data-hasura';
 import { ProductEdit, ProductList } from './product';
 import { createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
