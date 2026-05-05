@@ -50,12 +50,12 @@ This utility auto generates valid GraphQL queries based on the properties expose
 ## Installation
 
 ```sh
-npm install --save graphql ra-data-hasura
+npm install --save graphql @aginix/ra-data-hasura
 ```
 
 ## Usage
 
-The `ra-data-hasura` package exposes a single default function with the following signature:
+The `@aginix/ra-data-hasura` package exposes a single default function with the following signature:
 
 ```js
 buildHasuraProvider(
@@ -72,7 +72,7 @@ This function acts as a constructor for a `dataProvider` based on a Hasura Graph
 
 ```jsx
 import React, { useState, useEffect } from 'react';
-import buildHasuraProvider from 'ra-data-hasura';
+import buildHasuraProvider from '@aginix/ra-data-hasura';
 import { Admin, Resource } from 'react-admin';
 
 import { PostCreate, PostEdit, PostList } from './posts';
@@ -124,13 +124,28 @@ The data provider converts React Admin queries into the form expected by Hasura'
 will generate the following GraphQL request for Hasura:
 
 ```graphql
-query person($limit: Int, $offset: Int, $order_by: [person_order_by!]!, $where: person_bool_exp) {
-  items: person(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
+query person(
+  $limit: Int
+  $offset: Int
+  $order_by: [person_order_by!]!
+  $where: person_bool_exp
+) {
+  items: person(
+    limit: $limit
+    offset: $offset
+    order_by: $order_by
+    where: $where
+  ) {
     id
     name
     address_id
   }
-  total: person_aggregate(limit: $limit, offset: $offset, order_by: $order_by, where: $where) {
+  total: person_aggregate(
+    limit: $limit
+    offset: $offset
+    order_by: $order_by
+    where: $where
+  ) {
     aggregate {
       count
     }
@@ -175,7 +190,10 @@ and `distinct_on`:
 
 ```jsx
 export const AddressList = () => (
-  <List sort={{ field: 'city', order: 'DESC' }} filter={{ distinct_on: 'city' }}>
+  <List
+    sort={{ field: 'city', order: 'DESC' }}
+    filter={{ distinct_on: 'city' }}
+  >
     ...
   </List>
 );
@@ -309,7 +327,9 @@ buildHasuraProvider({ introspection: introspectionOptions });
 Once the data is returned back from the provider, you can customize it by implementing the `DataProvider` interface. [An example is changing the ID key](https://marmelab.com/react-admin/FAQ.html#can-i-have-custom-identifiersprimary-keys-for-my-resources).
 
 ```typescript
-const [dataProvider, setDataProvider] = React.useState<DataProvider | null>(null);
+const [dataProvider, setDataProvider] = React.useState<DataProvider | null>(
+  null
+);
 
 React.useEffect(() => {
   const buildDataProvider = async () => {
@@ -320,7 +340,10 @@ React.useEffect(() => {
     });
     const modifiedProvider: DataProvider = {
       getList: async (resource, params) => {
-        let { data, ...metadata } = await dataProviderHasura.getList(resource, params);
+        let { data, ...metadata } = await dataProviderHasura.getList(
+          resource,
+          params
+        );
 
         if (resource === 'example_resource_name') {
           data = data.map(
@@ -334,13 +357,17 @@ React.useEffect(() => {
         return { data: data as any[], ...metadata };
       },
       getOne: (resource, params) => dataProviderHasura.getOne(resource, params),
-      getMany: (resource, params) => dataProviderHasura.getMany(resource, params),
-      getManyReference: (resource, params) => dataProviderHasura.getManyReference(resource, params),
+      getMany: (resource, params) =>
+        dataProviderHasura.getMany(resource, params),
+      getManyReference: (resource, params) =>
+        dataProviderHasura.getManyReference(resource, params),
       update: (resource, params) => dataProviderHasura.update(resource, params),
-      updateMany: (resource, params) => dataProviderHasura.updateMany(resource, params),
+      updateMany: (resource, params) =>
+        dataProviderHasura.updateMany(resource, params),
       create: (resource, params) => dataProviderHasura.create(resource, params),
       delete: (resource, params) => dataProviderHasura.delete(resource, params),
-      deleteMany: (resource, params) => dataProviderHasura.deleteMany(resource, params),
+      deleteMany: (resource, params) =>
+        dataProviderHasura.deleteMany(resource, params),
     };
     setDataProvider(() => modifiedProvider);
   };
@@ -376,8 +403,8 @@ This can be easily done, and importantly can be done using `gql` template litera
 By default, the data provider will generate queries that include all fields on a resource, but without any relationships to nested entities. If you would like to keep these base fields but extend the query to also include related entities, then you can write a custom `buildFields` like this:
 
 ```ts
-import buildDataProvider, { buildFields } from 'ra-data-hasura';
-import type { BuildFields } from 'ra-data-hasura';
+import buildDataProvider, { buildFields } from '@aginix/ra-data-hasura';
+import type { BuildFields } from '@aginix/ra-data-hasura';
 import gql from 'graphql-tag';
 
 const extractFieldsFromQuery = (queryAst) => {
@@ -416,8 +443,8 @@ If you want full control over the GraphQL query, then you can define the entire 
 
 ```ts
 import gql from 'graphql-tag';
-import buildDataProvider, { buildFields } from 'ra-data-hasura';
-import type { BuildFields } from 'ra-data-hasura';
+import buildDataProvider, { buildFields } from '@aginix/ra-data-hasura';
+import type { BuildFields } from '@aginix/ra-data-hasura';
 
 const extractFieldsFromQuery = (queryAst) => {
   return queryAst.definitions[0].selectionSet.selections;
@@ -549,15 +576,17 @@ Generates:
 Dynamic JSONB filtering using a related record field:
 
 ```jsx
-<FunctionField render={(rec) => (
-  <ReferenceManyField
-    reference="account_plans"
-    target={`payments#details@_contains@processor#${rec.processor}_id`}
-    source="payment_processor"
-  >
-    <Datagrid>...</Datagrid>
-  </ReferenceManyField>
-)} />
+<FunctionField
+  render={(rec) => (
+    <ReferenceManyField
+      reference="account_plans"
+      target={`payments#details@_contains@processor#${rec.processor}_id`}
+      source="payment_processor"
+    >
+      <Datagrid>...</Datagrid>
+    </ReferenceManyField>
+  )}
+/>
 ```
 
 ### Raw Hasura query filter
@@ -573,9 +602,7 @@ const filters = {
   },
 };
 
-<List filter={filters}>
-  ...
-</List>
+<List filter={filters}>...</List>;
 ```
 
 This is especially useful when you need to express conditions that the `@` / `#` syntax does not cover, such as `_nin`, `_similar`, or nested `_and`/`_or` logic:
@@ -585,10 +612,7 @@ const filters = {
   metadata: {
     format: 'hasura-raw-query',
     value: {
-      _or: [
-        { tags: { _contains: 'featured' } },
-        { priority: { _gte: 5 } },
-      ],
+      _or: [{ tags: { _contains: 'featured' } }, { priority: { _gte: 5 } }],
     },
   },
 };
@@ -609,9 +633,7 @@ const MyList = () => {
     // customFilters are appended to the _and clause
     filter: { status: 'published' },
     // @ts-ignore — customFilters is not part of the official RA type
-    customFilters: [
-      { author_id: { _eq: currentUserId } },
-    ],
+    customFilters: [{ author_id: { _eq: currentUserId } }],
   });
   // ...
 };
@@ -646,9 +668,7 @@ Fields may contain dots to sort by nested object properties (e.g. `user.email`).
 Append `@nulls_last` or `@nulls_first` to a sort field to control how `NULL` values are ordered:
 
 ```jsx
-<List sort={{ field: 'published_at@nulls_last', order: 'DESC' }}>
-  ...
-</List>
+<List sort={{ field: 'published_at@nulls_last', order: 'DESC' }}>...</List>
 ```
 
 generates:
