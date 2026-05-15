@@ -1,4 +1,5 @@
 import merge from 'lodash/merge';
+import { ApolloClient, InMemoryCache } from '@apollo/client';
 import buildDataProvider, { Options } from 'ra-data-graphql';
 import {
   GET_ONE,
@@ -31,6 +32,11 @@ import {
 import { buildFields, BuildFields } from '../buildGqlQuery/buildFields';
 import { buildQueryFactory } from '../buildQuery';
 import { createDebugger } from '../debug';
+import {
+  buildActionMethods,
+  fetchIntrospectionViaClient,
+  ActionMethods,
+} from '../actions';
 import type { IntrospectionResult } from '../types';
 
 const defaultOptions: Partial<Options> = {
@@ -65,6 +71,9 @@ export type CustomDataProviderOptions = Partial<Options> & {
   debug?: boolean;
 };
 
+export type HasuraDataProvider = ReturnType<typeof buildDataProvider> &
+  ActionMethods;
+
 export type BuildCustomDataProvider = (
   options: CustomDataProviderOptions,
   buildGqlQueryOverrides?: {
@@ -76,7 +85,7 @@ export type BuildCustomDataProvider = (
   },
   customBuildVariables?: BuildVariables,
   customGetResponseParser?: GetResponseParser
-) => ReturnType<typeof buildDataProvider>;
+) => HasuraDataProvider;
 
 export const buildCustomDataProvider: BuildCustomDataProvider = (
   options = {},
@@ -84,7 +93,18 @@ export const buildCustomDataProvider: BuildCustomDataProvider = (
   customBuildVariables = defaultBuildVariables,
   customGetResponseParser = defaultGetResponseParser
 ) => {
-  const { debug = false, ...restOptions } = options;
+  const { debug = false, client, clientOptions, ...rest } = options;
+
+  // Instantiate the Apollo client ourselves so action methods always have a
+  // stable reference to it. ra-data-graphql v5.0.x does not expose `client`
+  // or `getIntrospection` on the returned data provider, so we can't pull it
+  // back out after construction.
+  const apolloClient =
+    (client as ApolloClient<unknown> | undefined) ??
+    new ApolloClient({
+      cache: new InMemoryCache(),
+      ...(clientOptions ?? {}),
+    });
 
   const buildGqlQueryOptions = {
     ...buildGqlQueryDefaults,
@@ -111,8 +131,24 @@ export const buildCustomDataProvider: BuildCustomDataProvider = (
   const finalBuildQuery = dbg ? dbg.wrapBuildQuery(buildQuery) : buildQuery;
 
   const provider = buildDataProvider(
-    merge({}, defaultOptions, restOptions, { buildQuery: finalBuildQuery })
+    merge({}, defaultOptions, rest, {
+      client: apolloClient,
+      buildQuery: finalBuildQuery,
+    })
   );
 
-  return dbg ? dbg.wrapDataProvider(provider) : provider;
+  const wrappedProvider = dbg ? dbg.wrapDataProvider(provider) : provider;
+
+  let introspectionPromise: Promise<IntrospectionResult> | null = null;
+  const getIntrospection = () => {
+    if (!introspectionPromise) {
+      introspectionPromise = fetchIntrospectionViaClient(apolloClient);
+    }
+    return introspectionPromise;
+  };
+
+  return Object.assign(
+    wrappedProvider,
+    buildActionMethods(apolloClient, getIntrospection)
+  ) as HasuraDataProvider;
 };

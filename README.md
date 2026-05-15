@@ -710,6 +710,107 @@ Set `perPage` to `-1` to fetch all records without a `limit` or `offset` being s
 
 Use with caution on large tables.
 
+## Calling Hasura Actions
+
+Hasura [Actions](https://hasura.io/docs/latest/actions/overview/) are exposed as
+GraphQL fields on the `Mutation` or `Query` root types. Because `ra-data-hasura`
+already manages an Apollo client and the introspected schema, you can invoke
+them directly through the data provider — no separate client setup required.
+
+```js
+const dataProvider = await buildHasuraProvider({
+  clientOptions: { uri: 'https://my-hasura/v1/graphql' },
+});
+
+// Mutation action
+const user = await dataProvider.actionMutation('createUser', {
+  email: 'alice@example.com',
+  name: 'Alice',
+});
+
+// Query action
+const matches = await dataProvider.actionQuery('searchUsers', {
+  query: 'alice',
+});
+```
+
+### Field selection
+
+By default, all scalar fields on the action's output type are selected. To pick
+a custom selection set (for example, to traverse nested objects), pass a
+selection set fragment as the third argument:
+
+```js
+const user = await dataProvider.actionMutation(
+  'createUser',
+  { email: 'alice@example.com' },
+  { fields: 'id email profile { avatarUrl }' }
+);
+```
+
+The string can be passed with or without surrounding braces. When the action
+returns a scalar (e.g. `String`, `Int`, `Boolean`), no selection set is needed
+and `fields` is ignored.
+
+### TypeScript
+
+Both methods accept generic type parameters for the response and variables:
+
+```ts
+type CreateUserInput = { email: string; name?: string };
+type CreateUserOutput = { id: number; email: string };
+
+const user = await dataProvider.actionMutation<
+  CreateUserOutput,
+  CreateUserInput
+>('createUser', { email: 'alice@example.com' });
+```
+
+### Caching
+
+`actionQuery` defaults to Apollo's `network-only` fetchPolicy so action results
+aren't served stale from the cache. Override it via `options.fetchPolicy` if you
+do want caching:
+
+```js
+await dataProvider.actionQuery(
+  'getDashboardStats',
+  {},
+  { fetchPolicy: 'cache-first' }
+);
+```
+
+`actionMutation` doesn't set a fetchPolicy by default; pass one through the same
+option if needed.
+
+### Inside react-admin components
+
+Use these methods through `useDataProvider` so react-admin's mutation lifecycle
+and notifications integrate naturally:
+
+```jsx
+import { useDataProvider, useNotify } from 'react-admin';
+
+const ResendInviteButton = ({ userId }) => {
+  const dataProvider = useDataProvider();
+  const notify = useNotify();
+  return (
+    <Button
+      onClick={async () => {
+        await dataProvider.actionMutation('resendInvite', { userId });
+        notify('Invite sent', { type: 'success' });
+      }}
+    >
+      Resend invite
+    </Button>
+  );
+};
+```
+
+Required arguments missing from `variables`, or actions not present in the
+introspected schema, throw with a descriptive error before any network request
+is made.
+
 ## Contributing
 
 To modify, extend and test this package locally:
