@@ -1,6 +1,6 @@
-import set from 'lodash/set';
 import omit from 'lodash/omit';
-import getFinalType from '../helpers/getFinalType';
+import set from 'lodash/set';
+import { buildWhere } from './buildWhere';
 import type {
   FetchType,
   IntrospectionResult,
@@ -15,7 +15,6 @@ type BuildGetListVariables = (
   params: any
 ) => any;
 
-const SPLIT_TOKEN = '#';
 const MULTI_SORT_TOKEN = ',';
 const SPLIT_OPERATION = '@';
 
@@ -41,120 +40,7 @@ export const buildGetListVariables: BuildGetListVariables =
      * level1#level2@_ilike
      */
 
-    /**
-         keys with comma separated values
-        {
-            'title@ilike,body@like,authors@similar': 'test',
-            'col1@like,col2@like': 'val'
-        }
-     */
-    const orFilterKeys = Object.keys(filterObj).filter((e) => e.includes(','));
-
-    /**
-        format filters
-        {
-            'title@ilike': 'test',
-            'body@like': 'test',
-            'authors@similar': 'test',
-            'col1@like': 'val',
-            'col2@like': 'val'
-        }
-    */
-    const orFilterObj = orFilterKeys.reduce((acc, commaSeparatedKey) => {
-      const keys = commaSeparatedKey.split(',');
-      return {
-        ...acc,
-        ...keys.reduce((acc2, key) => {
-          return {
-            ...acc2,
-            [key]: filterObj[commaSeparatedKey],
-          };
-        }, {}),
-      };
-    }, {});
-    filterObj = omit(filterObj, orFilterKeys);
-
-    const makeNestedFilter = (obj: any, operation: string): any => {
-      if (Object.keys(obj).length === 1) {
-        const [key] = Object.keys(obj);
-        return { [key]: makeNestedFilter(obj[key], operation) };
-      } else {
-        return { [operation]: obj };
-      }
-    };
-
-    const filterReducer = (obj: any) => (acc: any, key: any) => {
-      let filter;
-      if (key === 'ids') {
-        filter = { id: { _in: obj['ids'] } };
-      } else if (Array.isArray(obj[key])) {
-        let [keyName, operation = '_in', opPath] = key.split(SPLIT_OPERATION);
-        let value = opPath
-          ? set({}, opPath.split(SPLIT_TOKEN), obj[key])
-          : obj[key];
-        filter = set({}, keyName.split(SPLIT_TOKEN), { [operation]: value });
-      } else if (obj[key] && obj[key].format === 'hasura-raw-query') {
-        filter = set({}, key.split(SPLIT_TOKEN), obj[key].value || {});
-      } else {
-        let [keyName, operation = ''] = key.split(SPLIT_OPERATION);
-        let operator;
-        if (operation === '{}') operator = {};
-        const field = resource.type.fields.find((f) => f.name === keyName);
-        if (field) {
-          switch (getFinalType(field.type).name) {
-            case 'String':
-              operation = operation || '_ilike';
-              if (!operator)
-                operator = {
-                  [operation]: operation.includes('like')
-                    ? `%${obj[key]}%`
-                    : obj[key],
-                };
-              break;
-            case 'jsonb':
-              try {
-                const parsedJSONQuery = JSON.parse(obj[key]);
-                if (parsedJSONQuery) {
-                  operator = {
-                      [operation || '_contains']: parsedJSONQuery
-                  };
-                }
-              } catch (ex) {}
-              break;
-            default:
-              if (!operator)
-                operator = {
-                  [operation || '_eq']: operation.includes('like')
-                    ? `%${obj[key]}%`
-                    : obj[key],
-                };
-          }
-        } else {
-          // Else block runs when the field is not found in Graphql schema.
-          // Most likely it's nested. If it's not, it's better to let
-          // Hasura fail with a message than silently fail/ignore it
-          if (!operator)
-            operator = {
-              [operation || '_eq']: operation.includes('like')
-                ? `%${obj[key]}%`
-                : obj[key],
-            };
-        }
-        filter = set({}, keyName.split(SPLIT_TOKEN), operator);
-      }
-      return [...acc, filter];
-    };
-    const andFilters = Object.keys(filterObj)
-      .reduce(filterReducer(filterObj), customFilters)
-      .filter(Boolean);
-    const orFilters = Object.keys(orFilterObj)
-      .reduce(filterReducer(orFilterObj), [])
-      .filter(Boolean);
-
-    result['where'] = {
-      _and: andFilters,
-      ...(orFilters.length && { _or: orFilters }),
-    };
+    result['where'] = buildWhere(filterObj, customFilters, resource);
 
     if (params.pagination && params.pagination.perPage > -1) {
       result['limit'] = parseInt(params.pagination.perPage, 10);

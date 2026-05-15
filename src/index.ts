@@ -29,6 +29,18 @@ export {
   buildCustomDataProvider as buildHasuraProvider,
   buildCustomDataProvider as default,
 } from './customDataProvider';
-export type { BuildCustomDataProvider } from './customDataProvider';
+export type {
+  BuildCustomDataProvider,
+  HasuraDataProvider,
+} from './customDataProvider';
 
 export { FetchType } from './types';
+
+export { useAggregate } from './useAggregate';
+export type {
+  AggregateFields,
+  CountOptions,
+  ColumnOperator,
+  GetAggregateParams,
+  AggregateResultOf,
+} from './getAggregate/types';
